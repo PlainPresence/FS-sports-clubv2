@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         title: 'Logged Out',
         description: 'You have been successfully logged out.',
       });
-      setLocation('/admin-login');
+      setLocation('/admin');
     } catch (error) {
       toast({
         title: 'Error',
