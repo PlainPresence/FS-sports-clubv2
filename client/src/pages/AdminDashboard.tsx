@@ -34,12 +34,12 @@ export default function AdminDashboard() {
   const [slotPricesEdit, setSlotPricesEdit] = useState<Record<string, number>>({});
   const [slotPricesSaving, setSlotPricesSaving] = useState<Record<string, boolean>>({});
 
-  // List of sports (ensure these match your Firestore doc IDs)
+  // List of sports/facilities
   const sports = [
     { id: 'cricket', label: 'Cricket' },
-    { id: 'football', label: 'Football' },
-    { id: 'badminton', label: 'Badminton' },
-    { id: 'basketball', label: 'Basketball' },
+    { id: 'snooker', label: 'Snooker Table' },
+    { id: 'pool', label: '8 Ball Pool' },
+    { id: 'airhockey', label: 'Air Hockey Table' },
   ];
 
   const { bookings, loading: bookingsLoading, refetch } = useBookings({
@@ -434,21 +434,17 @@ export default function AdminDashboard() {
                               value={slotPricesEdit[sport.id] ?? ''}
                               onChange={(e) => handleSlotPriceChange(sport.id, e.target.value)}
                               className="border rounded px-2 py-1 w-24"
-                              disabled={sport.id !== 'cricket'}
+                              disabled={slotPricesSaving[sport.id]}
                             />
                           </td>
                           <td className="px-6 py-4 text-sm">
-                            {sport.id === 'cricket' ? (
-                              <Button
-                                size="sm"
-                                onClick={() => handleSlotPriceSave(sport.id)}
-                                disabled={slotPricesSaving[sport.id] || slotPricesEdit[sport.id] === slotPrices?.[sport.id]}
-                              >
-                                {slotPricesSaving[sport.id] ? 'Saving...' : 'Save'}
-                              </Button>
-                            ) : (
-                              <span className="text-gray-400 text-xs">N/A</span>
-                            )}
+                            <Button
+                              size="sm"
+                              onClick={() => handleSlotPriceSave(sport.id)}
+                              disabled={slotPricesSaving[sport.id] || slotPricesEdit[sport.id] === slotPrices?.[sport.id]}
+                            >
+                              {slotPricesSaving[sport.id] ? 'Saving...' : 'Save'}
+                            </Button>
                           </td>
                         </tr>
                       ))}
