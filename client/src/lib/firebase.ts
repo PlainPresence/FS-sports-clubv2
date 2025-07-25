@@ -184,21 +184,26 @@ export const updateSlotPrice = async (sport: string, price: number) => {
 export const attemptBookingWithSlotCheck = async (bookingData: any) => {
   try {
     const bookingRef = collection(db, "bookings");
-    const slotQuery = query(
-      bookingRef,
-      where("date", "==", bookingData.date),
-      where("sportType", "==", bookingData.sportType),
-      where("timeSlot", "==", bookingData.timeSlot),
-      where("paymentStatus", "==", "success")
-    );
+    // Check all slots in bookingData.timeSlots
     let result;
     await runTransaction(db, async (transaction) => {
-      const slotSnapshot = await getDocs(slotQuery);
-      if (!slotSnapshot.empty) {
-        // Slot already booked
-        result = { success: false, reason: "Slot already booked" };
-        return;
+      // For each slot, check if it is already booked
+      for (const slot of bookingData.timeSlots) {
+        const slotQuery = query(
+          bookingRef,
+          where("date", "==", bookingData.date),
+          where("sportType", "==", bookingData.sportType),
+          where("timeSlot", "==", slot),
+          where("paymentStatus", "==", "success")
+        );
+        const slotSnapshot = await getDocs(slotQuery);
+        if (!slotSnapshot.empty) {
+          // At least one slot is already booked
+          result = { success: false, reason: "Slot already booked" };
+          return;
+        }
       }
+      // All slots are available, create the booking
       const docRef = doc(bookingRef);
       transaction.set(docRef, {
         ...bookingData,
