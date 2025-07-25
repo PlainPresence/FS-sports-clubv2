@@ -448,6 +448,29 @@ export default function AdminDashboard() {
                           </td>
                         </tr>
                       ))}
+                      {/* Speed Meter Add-on */}
+                      <tr>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">Speed Meter (Add-on)</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <input
+                            type="number"
+                            min={0}
+                            value={slotPricesEdit['speedMeter'] ?? ''}
+                            onChange={(e) => handleSlotPriceChange('speedMeter', e.target.value)}
+                            className="border rounded px-2 py-1 w-24"
+                            disabled={slotPricesSaving['speedMeter']}
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSlotPriceSave('speedMeter')}
+                            disabled={slotPricesSaving['speedMeter'] || slotPricesEdit['speedMeter'] === slotPrices?.['speedMeter']}
+                          >
+                            {slotPricesSaving['speedMeter'] ? 'Saving...' : 'Save'}
+                          </Button>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
