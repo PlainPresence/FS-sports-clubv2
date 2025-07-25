@@ -7,10 +7,26 @@ import BookingSection from '@/components/BookingSection';
 import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { useEffect } from 'react';
+import { getTurfImages } from '@/lib/firebase';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingData, setBookingData] = useState(null);
+  const [turfImages, setTurfImages] = useState<any[]>([]);
+  const [turfImagesLoading, setTurfImagesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      setTurfImagesLoading(true);
+      const images = await getTurfImages();
+      images.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      setTurfImages(images);
+      setTurfImagesLoading(false);
+    };
+    fetchImages();
+  }, []);
 
   const handleBookingSuccess = (data: any) => {
     setBookingData(data);
@@ -37,6 +53,22 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-teal-100">
       {/* Navigation stays as is */}
       <Navigation />
+      {/* Turf Image Slideshow */}
+      {!turfImagesLoading && turfImages.length > 0 && (
+        <section className="max-w-4xl mx-auto mt-6 mb-12">
+          <Carousel className="relative">
+            <CarouselContent>
+              {turfImages.map((img, idx) => (
+                <CarouselItem key={img.id}>
+                  <img src={img.url} alt={`Turf ${idx + 1}`} className="w-full h-72 md:h-96 object-cover rounded-2xl shadow-lg" />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </section>
+      )}
       {showConfirmation && bookingData ? (
         <div className="pt-16">
           <ConfirmationSection 
