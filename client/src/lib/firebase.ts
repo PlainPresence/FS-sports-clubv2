@@ -149,6 +149,8 @@ export const createBlockedDate = async (dateData: any) => {
 };
 
 // Slot Prices Management
+// Now supports arbitrary keys, including 'speedMeter' for add-ons
+// Example: updateSlotPrice('speedMeter', 100)
 export const getSlotPrices = async () => {
   try {
     const pricesSnapshot = await getDocs(collection(db, "slotPrices"));
