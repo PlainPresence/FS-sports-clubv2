@@ -53,7 +53,7 @@ export default function Home() {
               <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2">About Our Turf</h2>
               <p className="text-gray-700 text-sm sm:text-base mb-4">FS Sports Club offers a premium cricket turf in Malegaon, open <span className='font-semibold text-green-600'>24/7</span> for your convenience. Our facility features:</p>
               <ul className="text-gray-600 text-sm sm:text-base mb-4 space-y-1 text-left max-w-md mx-auto">
-                <li><span className="font-semibold text-primary">• Size:</span> 90ft x 45ft (full-size cricket turf)</li>
+                <li><span className="font-semibold text-primary">• Size:</span> 65ft x 110ft (full-size cricket turf)</li>
                 <li><span className="font-semibold text-primary">• Surface:</span> High-quality artificial grass</li>
                 <li><span className="font-semibold text-primary">• Lighting:</span> Powerful floodlights for night play</li>
                 <li><span className="font-semibold text-primary">• Amenities:</span> Washrooms, parking, seating area, drinking water</li>
