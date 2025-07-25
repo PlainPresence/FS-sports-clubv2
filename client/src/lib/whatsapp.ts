@@ -14,3 +14,10 @@ Hi ${bookingData.fullName}! Your turf booking is confirmed.
   })}
 ⏰ Time: ${Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots.join(', ') : bookingData.timeSlot}
 ${bookingData.teamName ? `
+🏏 Team: ${bookingData.teamName}` : ''}
+💰 Amount Paid: ₹${bookingData.amount}
+
+Thank you for booking with SportsTurf Pro!
+`;
+  return message;
+};
