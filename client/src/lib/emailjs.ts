@@ -12,7 +12,7 @@ export const sendBookingConfirmation = async (bookingData: any) => {
       booking_id: bookingData.bookingId,
       sport_type: bookingData.sportType,
       booking_date: bookingData.date,
-      time_slot: bookingData.timeSlot,
+      time_slot: Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots.join(', ') : bookingData.timeSlot,
       amount: bookingData.amount,
       mobile: bookingData.mobile,
       team_name: bookingData.teamName || 'Individual',
