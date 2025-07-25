@@ -87,14 +87,15 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     setIsProcessing(true);
     try {
       const bookingId = generateBookingId();
-      const amount = prices && data.sportType ? ((prices[data.sportType] * data.timeSlots.length) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] : 0)) : 0;
+      const slotCount = watchedTimeSlots?.length || 0;
+      const amount = prices && data.sportType ? ((prices[data.sportType] * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)) : 0;
       const bookingData = {
         ...data,
         bookingId,
         amount,
         paymentStatus: 'pending',
         speedMeter,
-        speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] : 0,
+        speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
       };
       // Initiate Razorpay payment
       await new Promise((resolve, reject) => {
@@ -175,7 +176,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   };
 
   const selectedSport = 'cricket';
-  const totalAmount = selectedSport && prices ? ((prices[selectedSport] * (watchedTimeSlots?.length || 0)) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] : 0)) : 0;
+  const slotCount = watchedTimeSlots?.length || 0;
+  const totalAmount = selectedSport && prices ? ((prices[selectedSport] * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)) : 0;
 
   return (
     <section id="booking" className="py-20 bg-white">
@@ -388,7 +390,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-700">Duration:</span>
-                      <span className="font-semibold">{watchedTimeSlots?.length || 0} Hour(s)</span>
+                      <span className="font-semibold">{slotCount} Hour(s)</span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-700">Selected Slots:</span>
@@ -397,7 +399,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     {speedMeter && prices && prices['speedMeter'] && (
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-700">Add-on:</span>
-                        <span className="font-semibold">Speed Meter (+₹{prices['speedMeter']})</span>
+                        <span className="font-semibold">Speed Meter (+₹{prices['speedMeter']} x {slotCount} hour{slotCount > 1 ? 's' : ''} = ₹{prices['speedMeter'] * slotCount})</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center text-xl font-bold text-primary">
