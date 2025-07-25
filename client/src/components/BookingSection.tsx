@@ -39,6 +39,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   const [isProcessing, setIsProcessing] = useState(false);
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   const [pricesLoading, setPricesLoading] = useState(true);
+  // Add state for speed meter add-on
+  const [speedMeter, setSpeedMeter] = useState(false);
 
   const form = useForm<any>({
     resolver: zodResolver(bookingSchema),
@@ -85,12 +87,14 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     setIsProcessing(true);
     try {
       const bookingId = generateBookingId();
-      const amount = prices && data.sportType ? (prices[data.sportType] * data.timeSlots.length) : 0;
+      const amount = prices && data.sportType ? ((prices[data.sportType] * data.timeSlots.length) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] : 0)) : 0;
       const bookingData = {
         ...data,
         bookingId,
         amount,
         paymentStatus: 'pending',
+        speedMeter,
+        speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] : 0,
       };
       // Initiate Razorpay payment
       await new Promise((resolve, reject) => {
@@ -171,7 +175,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   };
 
   const selectedSport = watchedSport;
-  const totalAmount = selectedSport && prices ? (prices[selectedSport] * (watchedTimeSlots?.length || 0)) : 0;
+  const totalAmount = selectedSport && prices ? ((prices[selectedSport] * (watchedTimeSlots?.length || 0)) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] : 0)) : 0;
 
   return (
     <section id="booking" className="py-20 bg-white">
@@ -377,6 +381,22 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   )}
                 </div>
 
+                {/* Speed Meter Add-on */}
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    id="speedMeter"
+                    checked={speedMeter}
+                    onChange={e => setSpeedMeter(e.target.checked)}
+                    className="w-5 h-5 mr-2"
+                    disabled={pricesLoading || !prices || !('speedMeter' in prices)}
+                  />
+                  <Label htmlFor="speedMeter" className="text-gray-700 font-medium cursor-pointer">
+                    Add Speed Meter (Check ball speed)
+                    {prices && prices['speedMeter'] ? ` (+₹${prices['speedMeter']})` : ''}
+                  </Label>
+                </div>
+
                 {/* Pricing Summary */}
                 {selectedSport && (
                   <div className="p-6 bg-primary/5 rounded-xl border border-primary/20">
@@ -392,6 +412,12 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       <span className="text-gray-700">Selected Slots:</span>
                       <span className="font-semibold">{watchedTimeSlots?.join(', ')}</span>
                     </div>
+                    {speedMeter && prices && prices['speedMeter'] && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-700">Add-on:</span>
+                        <span className="font-semibold">Speed Meter (+₹{prices['speedMeter']})</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center text-xl font-bold text-primary">
                       <span>Total Amount:</span>
                       <span>₹{totalAmount}</span>
