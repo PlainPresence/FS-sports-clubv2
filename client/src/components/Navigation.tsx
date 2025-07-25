@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
+import logo from '@/assets/logo.png';
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -18,7 +19,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 flex items-center justify-center">
-              <img src={require('@/assets/logo.png')} alt="FS Sports Club Logo" className="w-10 h-10 object-contain rounded-xl" />
+              <img src={logo} alt="FS Sports Club Logo" className="w-10 h-10 object-contain rounded-xl" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">FS Sports Club</h1>
