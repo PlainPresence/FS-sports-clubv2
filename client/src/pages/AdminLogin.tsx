@@ -36,7 +36,7 @@ const AdminLogin: React.FC = () => {
           title: 'Login Successful',
           description: 'Welcome to the admin dashboard.',
         });
-        setLocation('/admin-access-sptp2024');
+        setLocation('/adminlogin');
       } else {
         toast({
           title: 'Login Failed',
