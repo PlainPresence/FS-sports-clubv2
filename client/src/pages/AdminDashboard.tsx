@@ -242,6 +242,17 @@ export default function AdminDashboard() {
   const todayBookings = bookings.filter((booking: BookingData) => booking.date === today);
   const todayRevenue = todayBookings.reduce((sum: number, booking: BookingData) => sum + (booking.amount || 0), 0);
   const confirmedBookings = bookings.filter((booking: BookingData) => booking.paymentStatus === 'success');
+  // Calculate total hours booked (multi-hour support)
+  const totalHoursBooked = bookings.reduce((sum: number, booking: BookingData) => {
+    if (Array.isArray(booking.timeSlots)) return sum + booking.timeSlots.length;
+    if (booking.timeSlot) return sum + 1;
+    return sum;
+  }, 0);
+  const todayHoursBooked = todayBookings.reduce((sum: number, booking: BookingData) => {
+    if (Array.isArray(booking.timeSlots)) return sum + booking.timeSlots.length;
+    if (booking.timeSlot) return sum + 1;
+    return sum;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -334,6 +345,17 @@ export default function AdminDashboard() {
               <div>
                 <div className="text-2xl font-extrabold text-gray-900">₹{bookings.reduce((sum: number, b: BookingData) => sum + (b.amount || 0), 0).toLocaleString()}</div>
                 <div className="text-xs text-gray-600">Total Revenue</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-lg hover:shadow-2xl transition-shadow border-0 rounded-2xl">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
+                <i className="fas fa-hourglass-half text-purple-600 text-2xl"></i>
+              </div>
+              <div>
+                <div className="text-2xl font-extrabold text-gray-900">{totalHoursBooked}</div>
+                <div className="text-xs text-gray-600">Total Hours Booked</div>
               </div>
             </CardContent>
           </Card>
