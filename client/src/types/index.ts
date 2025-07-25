@@ -20,10 +20,10 @@ export interface BookingFormData {
   mobile: string;
   email?: string;
   teamName?: string;
-  sportType: string;
+  facilityTypes: string[]; // e.g., ['cricket', 'snooker', 'pool', 'airhockey']
   date: string;
   timeSlots: string[]; // Multi-hour booking support
-  // timeSlot: string; // Deprecated
+  // sportType: string; // Deprecated
 }
 
 export interface BookingData extends BookingFormData {
