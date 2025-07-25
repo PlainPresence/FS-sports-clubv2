@@ -35,3 +35,17 @@ export const sendWhatsAppNotification = (bookingData: any) => {
     return false;
   }
 };
+
+export const openWhatsApp = (bookingData: any, phoneNumber?: string) => {
+  const message = generateWhatsAppMessage(bookingData);
+  const encodedMessage = encodeURIComponent(message);
+  const targetPhone = phoneNumber || bookingData.mobile;
+  const whatsappURL = `https://wa.me/${targetPhone}?text=${encodedMessage}`;
+  try {
+    window.open(whatsappURL, '_blank');
+    return true;
+  } catch (error) {
+    console.error('Failed to open WhatsApp:', error);
+    return false;
+  }
+};
