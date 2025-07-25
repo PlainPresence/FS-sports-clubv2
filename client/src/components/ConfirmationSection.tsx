@@ -25,8 +25,16 @@ export default function ConfirmationSection({ bookingData, onBookAnother }: Conf
     doc.text(`Mobile: ${bookingData.mobile}`, 14, 46);
     doc.text(`Sport: ${bookingData.sportType}`, 14, 54);
     doc.text(`Date: ${formatDate(bookingData.date)}`, 14, 62);
-    doc.text(`Time: ${formatTimeSlot(bookingData.timeSlot)}`, 14, 70);
-    doc.text(`Amount Paid: ₹${bookingData.amount}`, 14, 78);
+    if (Array.isArray(bookingData.timeSlots)) {
+      doc.text('Time:', 14, 70);
+      bookingData.timeSlots.forEach((slot: string, idx: number) => {
+        doc.text(`- ${formatTimeSlot(slot)}`, 20, 78 + idx * 8);
+      });
+    } else {
+      doc.text(`Time: ${formatTimeSlot(bookingData.timeSlot)}`, 14, 70);
+    }
+    const timeOffset = Array.isArray(bookingData.timeSlots) ? (78 + (bookingData.timeSlots.length * 8)) : 78;
+    doc.text(`Amount Paid:  ${bookingData.amount}`, 14, timeOffset);
     if (bookingData.teamName) {
       doc.text(`Team Name: ${bookingData.teamName}`, 14, 86);
     }
@@ -105,7 +113,11 @@ export default function ConfirmationSection({ bookingData, onBookAnother }: Conf
                 </div>
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Time</div>
-                  <div className="font-semibold">{formatTimeSlot(bookingData.timeSlot)}</div>
+                  <div className="font-semibold">
+                    {Array.isArray(bookingData.timeSlots)
+                      ? bookingData.timeSlots.map((slot: string) => formatTimeSlot(slot)).join(', ')
+                      : formatTimeSlot(bookingData.timeSlot)}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-500 mb-1">Amount Paid</div>
