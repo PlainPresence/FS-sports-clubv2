@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, setDoc, QueryDocumentSnapshot, runTransaction } from "firebase/firestore";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,7 +16,6 @@ console.log("FIREBASE CONFIG:", firebaseConfig);
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 
 export const loginAdmin = async (email: string, password: string) => {
   try {
@@ -225,65 +223,6 @@ export const logFailedPayment = async (logData: any) => {
       ...logData,
       createdAt: Timestamp.now(),
     });
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-};
-
-// Turf Images Management
-const TURF_IMAGES_COLLECTION = "turfImages";
-
-export const uploadTurfImage = async (file: File) => {
-  try {
-    const fileName = `${Date.now()}_${file.name}`;
-    const imageRef = storageRef(storage, `turf/${fileName}`);
-    await uploadBytes(imageRef, file);
-    const url = await getDownloadURL(imageRef);
-    // Add to Firestore
-    const docRef = await addDoc(collection(db, TURF_IMAGES_COLLECTION), {
-      url,
-      fileName,
-      createdAt: Timestamp.now(),
-    });
-    return { success: true, id: docRef.id, url };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-};
-
-export const deleteTurfImage = async (imageId: string, fileName: string) => {
-  try {
-    // Delete from storage
-    const imageRef = storageRef(storage, `turf/${fileName}`);
-    await deleteObject(imageRef);
-    // Delete from Firestore
-    await updateDoc(doc(db, TURF_IMAGES_COLLECTION, imageId), { deleted: true });
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-};
-
-export const getTurfImages = async () => {
-  try {
-    const q = query(collection(db, TURF_IMAGES_COLLECTION), where('deleted', '!=', true), orderBy('createdAt', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (error: any) {
-    return [];
-  }
-};
-
-export const reorderTurfImages = async (orderedIds: string[]) => {
-  try {
-    // Set an 'order' field for each image
-    const batch = [];
-    for (let i = 0; i < orderedIds.length; i++) {
-      const imageId = orderedIds[i];
-      batch.push(updateDoc(doc(db, TURF_IMAGES_COLLECTION, imageId), { order: i }));
-    }
-    await Promise.all(batch);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
