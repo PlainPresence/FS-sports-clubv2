@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         title: 'Logged Out',
         description: 'You have been successfully logged out.',
       });
-      setLocation('/admin');
+      setLocation('/admin-access-sptp2024');
     } catch (error) {
       toast({
         title: 'Error',
