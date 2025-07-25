@@ -21,8 +21,8 @@ export default function Navigation() {
               <i className="fas fa-futbol text-white text-lg"></i>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">SportsTurf Pro</h1>
-              <p className="text-xs text-gray-500">Multi-Sport Facility</p>
+              <h1 className="text-xl font-bold text-gray-900">FS Sports Club</h1>
+              <p className="text-xs text-gray-500">Sport Facility</p>
             </div>
           </div>
           
