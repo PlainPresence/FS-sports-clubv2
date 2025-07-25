@@ -22,11 +22,18 @@ declare global {
 }
 
 const AdminLogin: React.FC = () => {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { login, loading } = useAuth();
   
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<AdminLoginForm>();
+
+  React.useEffect(() => {
+    if (user) {
+      setLocation('/adminlogin');
+    }
+  }, [user, setLocation]);
 
   const onSubmit: SubmitHandler<AdminLoginForm> = async (data: AdminLoginForm) => {
     try {
