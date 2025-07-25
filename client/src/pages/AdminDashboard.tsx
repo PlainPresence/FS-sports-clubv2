@@ -126,7 +126,7 @@ export default function AdminDashboard() {
       b.mobile,
       b.sportType,
       b.date,
-      b.timeSlot,
+      Array.isArray(b.timeSlots) ? b.timeSlots.join(', ') : b.timeSlot || '',
       b.amount,
       b.paymentStatus
     ]);
@@ -489,7 +489,11 @@ export default function AdminDashboard() {
                           <td className="px-6 py-4 text-sm text-gray-900">{booking.mobile}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 capitalize">{booking.sportType}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{formatDate(booking.date)}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{formatTimeSlot(booking.timeSlot)}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{
+                            Array.isArray(booking.timeSlots)
+                              ? booking.timeSlots.join(', ')
+                              : booking.timeSlot || ''
+                          }</td>
                           <td className="px-6 py-4 text-sm font-medium text-green-600">
                             {editingId === booking.id ? (
                               <div className="flex items-center space-x-2">
