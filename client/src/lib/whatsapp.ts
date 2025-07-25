@@ -21,3 +21,17 @@ Thank you for booking with SportsTurf Pro!
 `;
   return message;
 };
+
+export const sendWhatsAppNotification = (bookingData: any) => {
+  const customerNumber = bookingData.mobile;
+  const message = generateWhatsAppMessage(bookingData);
+  const encodedMessage = encodeURIComponent(message);
+  const whatsappURL = `https://wa.me/${customerNumber}?text=${encodedMessage}`;
+  try {
+    window.open(whatsappURL, '_blank');
+    return true;
+  } catch (error) {
+    console.error('Failed to send WhatsApp notification:', error);
+    return false;
+  }
+};
