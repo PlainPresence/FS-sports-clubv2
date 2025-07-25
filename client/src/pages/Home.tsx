@@ -56,7 +56,7 @@ export default function Home() {
                 <li><span className="font-semibold text-primary">• Size:</span> 65ft x 110ft (full-size cricket turf)</li>
                 <li><span className="font-semibold text-primary">• Surface:</span> High-quality artificial grass</li>
                 <li><span className="font-semibold text-primary">• Lighting:</span> Powerful floodlights for night play</li>
-                <li><span className="font-semibold text-primary">• Amenities:</span> Washrooms, parking, seating area, drinking water</li>
+                <li><span className="font-semibold text-primary">• Amenities:</span> Washrooms, parking, seating area, drinking water, canteen (snacks & refreshments)</li>
                 <li><span className="font-semibold text-primary">• Location:</span> Beside Nayara petrol pump, Madde Hotel, Daregaon, Malegaon, 423203</li>
                 <li><span className="font-semibold text-primary">• Add-on:</span> Speed Meter available for ball speed checks</li>
               </ul>
