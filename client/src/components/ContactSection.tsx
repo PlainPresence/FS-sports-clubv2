@@ -79,7 +79,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Location</h3>
-                <p className="text-gray-600">123 Sports Complex, Stadium Road<br />Mumbai, Maharashtra 400001</p>
+                <p className="text-gray-600">FS sports club, beside Nayara petrol pump,<br />Madde Hotel, Daregaon, Malegaon, 423203</p>
               </div>
             </div>
 
@@ -89,7 +89,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Phone</h3>
-                <p className="text-gray-600">+91 98765 43210<br />+91 87654 32109</p>
+                <p className="text-gray-600">7066990055</p>
               </div>
             </div>
 
