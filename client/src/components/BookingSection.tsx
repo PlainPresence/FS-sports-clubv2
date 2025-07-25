@@ -49,13 +49,13 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       mobile: '',
       email: '',
       teamName: '',
-      sportType: undefined,
+      sportType: 'cricket',
       date: '',
       timeSlots: [],
     },
   });
 
-  const watchedSport = form.watch('sportType');
+  const watchedSport = 'cricket';
   const watchedDate = form.watch('date');
   const watchedTimeSlots = form.watch('timeSlots');
   
@@ -174,7 +174,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     }
   };
 
-  const selectedSport = watchedSport;
+  const selectedSport = 'cricket';
   const totalAmount = selectedSport && prices ? ((prices[selectedSport] * (watchedTimeSlots?.length || 0)) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] : 0)) : 0;
 
   return (
@@ -263,25 +263,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     )}
                   </div>
 
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">
-                      Sport Type *
-                    </Label>
-                    <Select value={form.watch('sportType')} onValueChange={(value) => form.setValue('sportType', value as any)}>
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select a sport" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cricket">Cricket - ₹{prices?.cricket ?? ''}/hour</SelectItem>
-                        <SelectItem value="football">Football - ₹{prices?.football ?? ''}/hour</SelectItem>
-                        <SelectItem value="badminton">Badminton - ₹{prices?.badminton ?? ''}/hour</SelectItem>
-                        <SelectItem value="basketball">Basketball - ₹{prices?.basketball ?? ''}/hour</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.sportType && (
-                      <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportType.message}</p>
-                    )}
-                  </div>
+                  {/* Sport selection removed: always cricket */}
 
                   <div>
                     <Label htmlFor="date" className="text-sm font-semibold text-gray-700 mb-3 block">
