@@ -11,7 +11,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import BlockSlotModal from '@/components/BlockSlotModal';
 import BlockDateModal from '@/components/BlockDateModal';
-import { updateBooking, getSlotPrices, updateSlotPrice, uploadTurfImage, deleteTurfImage, getTurfImages, reorderTurfImages } from '@/lib/firebase';
+import { updateBooking, getSlotPrices, updateSlotPrice } from '@/lib/firebase';
 import { BookingData } from '@/types';
 import { saveAs } from 'file-saver';
 
@@ -33,12 +33,6 @@ export default function AdminDashboard() {
   const [slotPricesLoading, setSlotPricesLoading] = useState(true);
   const [slotPricesEdit, setSlotPricesEdit] = useState<Record<string, number>>({});
   const [slotPricesSaving, setSlotPricesSaving] = useState<Record<string, boolean>>({});
-
-  // Turf Images State
-  const [turfImages, setTurfImages] = useState<any[]>([]);
-  const [turfImagesLoading, setTurfImagesLoading] = useState(true);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [reordering, setReordering] = useState(false);
 
   // List of sports (ensure these match your Firestore doc IDs)
   const sports = [
@@ -75,18 +69,6 @@ export default function AdminDashboard() {
       setLocation('/admin-access-sptp2024');
     }
   }, [user, setLocation]);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      setTurfImagesLoading(true);
-      const images = await getTurfImages();
-      // Sort by 'order' if present, else by createdAt
-      images.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      setTurfImages(images);
-      setTurfImagesLoading(false);
-    };
-    fetchImages();
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -236,44 +218,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingImage(true);
-    const result = await uploadTurfImage(file);
-    setUploadingImage(false);
-    if (result.success) {
-      setTurfImages((prev) => [...prev, { id: result.id, url: result.url, fileName: file.name }]);
-      toast({ title: 'Image Uploaded', description: 'Turf image uploaded successfully.' });
-    } else {
-      toast({ title: 'Error', description: result.error || 'Failed to upload image.', variant: 'destructive' });
-    }
-  };
-
-  const handleImageDelete = async (imageId: string, fileName: string) => {
-    if (!window.confirm('Delete this image?')) return;
-    const result = await deleteTurfImage(imageId, fileName);
-    if (result.success) {
-      setTurfImages((prev) => prev.filter(img => img.id !== imageId));
-      toast({ title: 'Image Deleted', description: 'Turf image deleted.' });
-    } else {
-      toast({ title: 'Error', description: result.error || 'Failed to delete image.', variant: 'destructive' });
-    }
-  };
-
-  // Simple drag-and-drop reordering (vertical)
-  const handleReorder = async (startIdx: number, endIdx: number) => {
-    if (startIdx === endIdx) return;
-    const updated = [...turfImages];
-    const [removed] = updated.splice(startIdx, 1);
-    updated.splice(endIdx, 0, removed);
-    setTurfImages(updated);
-    setReordering(true);
-    await reorderTurfImages(updated.map(img => img.id));
-    setReordering(false);
-    toast({ title: 'Order Updated', description: 'Image order updated.' });
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -348,39 +292,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
-        </motion.div>
-
-        {/* Turf Images Management */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.05 }}
-        >
-          <Card className="shadow-lg mb-8">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Turf Images</h2>
-              <div className="mb-4 flex items-center gap-4">
-                <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
-                {uploadingImage && <span className="text-blue-500">Uploading...</span>}
-              </div>
-              {turfImagesLoading ? (
-                <div className="flex justify-center py-8"><LoadingSpinner size="lg" /></div>
-              ) : turfImages.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No images uploaded yet.</div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {turfImages.map((img, idx) => (
-                    <div key={img.id} className="relative group border rounded-lg overflow-hidden shadow">
-                      <img src={img.url} alt="Turf" className="w-full h-40 object-cover" draggable onDragStart={e => e.dataTransfer.setData('idx', idx.toString())} onDrop={e => { e.preventDefault(); const from = Number(e.dataTransfer.getData('idx')); handleReorder(from, idx); }} onDragOver={e => e.preventDefault()} />
-                      <button onClick={() => handleImageDelete(img.id, img.fileName)} className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-80 hover:opacity-100"><i className="fas fa-trash"></i></button>
-                      <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">{idx + 1}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {reordering && <div className="text-blue-500 mt-2">Updating order...</div>}
-            </CardContent>
-          </Card>
         </motion.div>
 
         {/* Stats Overview */}
