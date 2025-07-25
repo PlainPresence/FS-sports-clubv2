@@ -314,15 +314,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {slots.map((slot, idx) => {
                         const checked = watchedTimeSlots?.includes(slot.time);
-                        // Only allow selecting consecutive slots
-                        const isDisabled = !slot.available || (
-                          watchedTimeSlots?.length > 0 &&
-                          !checked &&
-                          (
-                            idx !== slots.findIndex(s => s.time === watchedTimeSlots[0]) - 1 &&
-                            idx !== slots.findIndex(s => s.time === watchedTimeSlots[watchedTimeSlots.length - 1]) + 1
-                          )
-                        );
+                        // Allow flexible selection: only disable if not available
+                        const isDisabled = !slot.available;
                         return (
                           <Label key={slot.time} className={`cursor-pointer group ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}>
                             <input
