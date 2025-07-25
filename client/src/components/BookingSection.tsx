@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup } from '@/components/ui/radio-group';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/useSlots';
@@ -24,7 +24,7 @@ const bookingSchema = z.object({
   mobile: z.string().regex(/^[+]?\d{10,14}$/, 'Invalid mobile number'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   teamName: z.string().optional(),
-  facilityTypes: z.array(z.string()).min(1, 'Please select at least one facility'),
+  facilityType: z.string().min(1, 'Please select a facility'),
   date: z.string().min(1, 'Please select a date'),
   timeSlots: z.array(z.string()).min(1, 'Please select at least one slot'),
 });
@@ -54,14 +54,14 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       mobile: '',
       email: '',
       teamName: '',
-      facilityTypes: ['cricket'],
+      facilityType: 'cricket',
       date: '',
       timeSlots: [],
     },
   });
 
-  const watchedFacilities = form.watch('facilityTypes');
-  const watchedSport = watchedFacilities && watchedFacilities.length > 0 ? watchedFacilities[0] : 'cricket';
+  const watchedFacility = form.watch('facilityType') || 'cricket';
+  const watchedSport = watchedFacility;
   const watchedDate = form.watch('date');
   const watchedTimeSlots = form.watch('timeSlots');
   
@@ -94,8 +94,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     try {
       const bookingId = generateBookingId();
       const slotCount = watchedTimeSlots?.length || 0;
-      const amount = prices && data.facilityTypes && data.facilityTypes.length > 0
-        ? data.facilityTypes.reduce((sum: number, fac: string) => sum + ((prices[fac] || 0) * data.timeSlots.length), 0) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0)
+      const amount = prices && data.facilityType
+        ? ((prices[data.facilityType] || 0) * data.timeSlots.length) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0)
         : 0;
       const bookingData = {
         ...data,
@@ -104,7 +104,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         paymentStatus: 'pending',
         speedMeter,
         speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
-        facilityTypes: data.facilityTypes,
+        facilityType: data.facilityType,
       };
       // Initiate Razorpay payment
       await new Promise((resolve, reject) => {
@@ -184,10 +184,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     }
   };
 
-  const selectedFacilities = watchedFacilities && watchedFacilities.length > 0 ? watchedFacilities : ['cricket'];
+  const selectedFacility = watchedFacility;
   const slotCount = watchedTimeSlots?.length || 0;
-  const totalAmount = prices && watchedFacilities && watchedFacilities.length > 0
-    ? watchedFacilities.reduce((sum, fac) => sum + ((prices[fac] || 0) * slotCount), 0) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)
+  const totalAmount = prices && watchedFacility
+    ? ((prices[watchedFacility] || 0) * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)
     : 0;
 
   return (
@@ -279,26 +279,25 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 {/* Facility Selection */}
                 <div>
                   <Label className="text-sm font-semibold text-gray-700 mb-3 block">Select Facility *</Label>
-                  <div className="flex flex-wrap gap-3 mb-4">
+                  <RadioGroup
+                    value={watchedFacility}
+                    onValueChange={value => form.setValue('facilityType', value)}
+                    className="flex flex-wrap gap-3 mb-4"
+                  >
                     {facilityOptions.map(fac => (
                       <label key={fac.id} className="flex items-center space-x-2 cursor-pointer">
-                        <Checkbox
-                          checked={watchedFacilities?.includes(fac.id)}
-                          onCheckedChange={checked => {
-                            let newFacilities = watchedFacilities ? [...watchedFacilities] : [];
-                            if (checked) {
-                              newFacilities.push(fac.id);
-                            } else {
-                              newFacilities = newFacilities.filter(f => f !== fac.id);
-                            }
-                            if (newFacilities.length === 0) newFacilities = ['cricket'];
-                            form.setValue('facilityTypes', newFacilities);
-                          }}
+                        <input
+                          type="radio"
+                          name="facilityType"
+                          value={fac.id}
+                          checked={watchedFacility === fac.id}
+                          onChange={() => form.setValue('facilityType', fac.id)}
+                          className="w-4 h-4"
                         />
                         <span className="text-gray-700 text-sm">{fac.label} {prices && prices[fac.id] ? `- ₹${prices[fac.id]}/hour` : ''}</span>
                       </label>
                     ))}
-                  </div>
+                  </RadioGroup>
                 </div>
 
                   <div>
@@ -416,22 +415,20 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 </div>
 
                 {/* Pricing Summary */}
-                {selectedFacilities && (
+                {selectedFacility && (
                   <div className="p-6 bg-primary/5 rounded-xl border border-primary/20">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Selected Facilities:</span>
-                      <span className="font-semibold capitalize">{selectedFacilities.map(fac => facilityOptions.find(opt => opt.id === fac)?.label || fac).join(', ')}</span>
+                      <span className="text-gray-700">Selected Facility:</span>
+                      <span className="font-semibold capitalize">{facilityOptions.find(opt => opt.id === selectedFacility)?.label || selectedFacility}</span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-700">Duration:</span>
                       <span className="font-semibold">{slotCount} Hour(s)</span>
                     </div>
-                    {selectedFacilities.map(fac => (
-                      <div key={fac} className="flex justify-between items-center mb-2 text-sm">
-                        <span className="text-gray-700">{facilityOptions.find(opt => opt.id === fac)?.label || fac}:</span>
-                        <span className="font-semibold">₹{prices && prices[fac] ? prices[fac] : 0} x {slotCount} = ₹{prices && prices[fac] ? prices[fac] * slotCount : 0}</span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between items-center mb-2 text-sm">
+                      <span className="text-gray-700">{facilityOptions.find(opt => opt.id === selectedFacility)?.label || selectedFacility}:</span>
+                      <span className="font-semibold">₹{prices && prices[selectedFacility] ? prices[selectedFacility] : 0} x {slotCount} = ₹{prices && prices[selectedFacility] ? prices[selectedFacility] * slotCount : 0}</span>
+                    </div>
                     {speedMeter && prices && prices['speedMeter'] && (
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-700">Add-on:</span>
