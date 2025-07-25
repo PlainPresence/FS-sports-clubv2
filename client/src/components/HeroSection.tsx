@@ -26,7 +26,7 @@ export default function HeroSection({ onBookNowClick }: HeroSectionProps) {
   }, [bgIndex]);
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative min-h-[320px] sm:min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-32">
       {/* Slideshow backgrounds */}
       {images.map((img, idx) => (
         <div
