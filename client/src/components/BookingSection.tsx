@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/useSlots';
@@ -23,9 +24,7 @@ const bookingSchema = z.object({
   mobile: z.string().regex(/^[+]?\d{10,14}$/, 'Invalid mobile number'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   teamName: z.string().optional(),
-  sportType: z.enum(['cricket', 'football', 'badminton', 'basketball'], {
-    required_error: 'Please select a sport',
-  }),
+  facilityTypes: z.array(z.string()).min(1, 'Please select at least one facility'),
   date: z.string().min(1, 'Please select a date'),
   timeSlots: z.array(z.string()).min(1, 'Please select at least one slot'),
 });
@@ -42,6 +41,12 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   // Add state for speed meter add-on
   const [speedMeter, setSpeedMeter] = useState(false);
 
+  const facilityOptions = [
+    { id: 'cricket', label: 'Cricket' },
+    { id: 'snooker', label: 'Snooker Table' },
+    { id: 'pool', label: '8 Ball Pool' },
+    { id: 'airhockey', label: 'Air Hockey Table' },
+  ];
   const form = useForm<any>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
@@ -49,13 +54,14 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       mobile: '',
       email: '',
       teamName: '',
-      sportType: 'cricket',
+      facilityTypes: ['cricket'],
       date: '',
       timeSlots: [],
     },
   });
 
-  const watchedSport = 'cricket';
+  const watchedFacilities = form.watch('facilityTypes');
+  const watchedSport = watchedFacilities && watchedFacilities.length > 0 ? watchedFacilities[0] : 'cricket';
   const watchedDate = form.watch('date');
   const watchedTimeSlots = form.watch('timeSlots');
   
@@ -88,7 +94,9 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     try {
       const bookingId = generateBookingId();
       const slotCount = watchedTimeSlots?.length || 0;
-      const amount = prices && data.sportType ? ((prices[data.sportType] * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)) : 0;
+      const amount = prices && data.facilityTypes && data.facilityTypes.length > 0
+        ? data.facilityTypes.reduce((sum: number, fac: string) => sum + ((prices[fac] || 0) * data.timeSlots.length), 0) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0)
+        : 0;
       const bookingData = {
         ...data,
         bookingId,
@@ -96,6 +104,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         paymentStatus: 'pending',
         speedMeter,
         speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
+        facilityTypes: data.facilityTypes,
       };
       // Initiate Razorpay payment
       await new Promise((resolve, reject) => {
@@ -175,9 +184,11 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     }
   };
 
-  const selectedSport = 'cricket';
+  const selectedFacilities = watchedFacilities && watchedFacilities.length > 0 ? watchedFacilities : ['cricket'];
   const slotCount = watchedTimeSlots?.length || 0;
-  const totalAmount = selectedSport && prices ? ((prices[selectedSport] * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)) : 0;
+  const totalAmount = prices && watchedFacilities && watchedFacilities.length > 0
+    ? watchedFacilities.reduce((sum, fac) => sum + ((prices[fac] || 0) * slotCount), 0) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)
+    : 0;
 
   return (
     <section id="booking" className="py-20 bg-white">
@@ -265,7 +276,30 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     )}
                   </div>
 
-                  {/* Sport selection removed: always cricket */}
+                {/* Facility Selection */}
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-3 block">Select Facility *</Label>
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    {facilityOptions.map(fac => (
+                      <label key={fac.id} className="flex items-center space-x-2 cursor-pointer">
+                        <Checkbox
+                          checked={watchedFacilities?.includes(fac.id)}
+                          onCheckedChange={checked => {
+                            let newFacilities = watchedFacilities ? [...watchedFacilities] : [];
+                            if (checked) {
+                              newFacilities.push(fac.id);
+                            } else {
+                              newFacilities = newFacilities.filter(f => f !== fac.id);
+                            }
+                            if (newFacilities.length === 0) newFacilities = ['cricket'];
+                            form.setValue('facilityTypes', newFacilities);
+                          }}
+                        />
+                        <span className="text-gray-700 text-sm">{fac.label} {prices && prices[fac.id] ? `- ₹${prices[fac.id]}/hour` : ''}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
                   <div>
                     <Label htmlFor="date" className="text-sm font-semibold text-gray-700 mb-3 block">
@@ -382,20 +416,22 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 </div>
 
                 {/* Pricing Summary */}
-                {selectedSport && (
+                {selectedFacilities && (
                   <div className="p-6 bg-primary/5 rounded-xl border border-primary/20">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Selected Sport:</span>
-                      <span className="font-semibold capitalize">{selectedSport}</span>
+                      <span className="text-gray-700">Selected Facilities:</span>
+                      <span className="font-semibold capitalize">{selectedFacilities.map(fac => facilityOptions.find(opt => opt.id === fac)?.label || fac).join(', ')}</span>
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-700">Duration:</span>
                       <span className="font-semibold">{slotCount} Hour(s)</span>
                     </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Selected Slots:</span>
-                      <span className="font-semibold">{watchedTimeSlots?.join(', ')}</span>
-                    </div>
+                    {selectedFacilities.map(fac => (
+                      <div key={fac} className="flex justify-between items-center mb-2 text-sm">
+                        <span className="text-gray-700">{facilityOptions.find(opt => opt.id === fac)?.label || fac}:</span>
+                        <span className="font-semibold">₹{prices && prices[fac] ? prices[fac] : 0} x {slotCount} = ₹{prices && prices[fac] ? prices[fac] * slotCount : 0}</span>
+                      </div>
+                    ))}
                     {speedMeter && prices && prices['speedMeter'] && (
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-700">Add-on:</span>
