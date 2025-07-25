@@ -46,17 +46,7 @@ export default function Home() {
         </div>
       ) : (
         <>
-          {/* Hero Section with gradient and bold header */}
-          <section className="bg-gradient-to-r from-blue-500 via-green-400 to-teal-400 py-20 text-center rounded-b-3xl shadow-xl mb-12">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-4 drop-shadow-lg">Welcome to SportsTurf Pro</h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-8">Book your favorite sports slot with ease</p>
-            <button
-              onClick={handleBookNowClick}
-              className="bg-white text-blue-600 font-bold px-8 py-4 rounded-full shadow-lg hover:bg-blue-50 hover:scale-105 transition-all text-lg"
-            >
-              Book Now <i className="fas fa-arrow-right ml-2"></i>
-            </button>
-          </section>
+          <HeroSection onBookNowClick={handleBookNowClick} />
           {/* Themed Sports Section */}
           <SportsSection />
           {/* Themed Upcoming Slots Section */}
