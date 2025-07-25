@@ -32,10 +32,7 @@ export default function UpcomingSlots() {
               const isAvailable = !bookedSlots.includes(timeSlot) && !blockedSlots.includes(timeSlot);
               if (isAvailable && allSlots.length < 6) {
                 allSlots.push({
-                  time: timeSlot.replace('-', ' - ').replace(':', ':00').replace(/(\d{2}):00/g, (match, hour) => {
-                    const h = parseInt(hour);
-                    return `${h > 12 ? h - 12 : h || 12}:00 ${h >= 12 ? 'PM' : 'AM'}`;
-                  }),
+                  time: formatTimeLabel(timeSlot),
                   sport: sport.charAt(0).toUpperCase() + sport.slice(1),
                   available: true,
                 });
@@ -97,4 +94,14 @@ export default function UpcomingSlots() {
       </div>
     </section>
   );
+}
+
+function formatTimeLabel(timeSlot: string) {
+  // timeSlot is like '06:00-07:00'
+  const [start] = timeSlot.split('-');
+  let [hour, minute] = start.split(':').map(Number);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  let displayHour = hour % 12;
+  if (displayHour === 0) displayHour = 12;
+  return `${displayHour}:00 ${ampm}`;
 }
