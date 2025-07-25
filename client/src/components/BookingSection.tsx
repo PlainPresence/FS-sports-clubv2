@@ -20,14 +20,14 @@ import LoadingSpinner from './LoadingSpinner';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  mobile: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid mobile number'),
+  mobile: z.string().regex(/^[+]?\d{10,14}$/, 'Invalid mobile number'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   teamName: z.string().optional(),
   sportType: z.enum(['cricket', 'football', 'badminton', 'basketball'], {
     required_error: 'Please select a sport',
   }),
   date: z.string().min(1, 'Please select a date'),
-  timeSlot: z.string().min(1, 'Please select a time slot'),
+  timeSlots: z.array(z.string()).min(1, 'Please select at least one slot'),
 });
 
 interface BookingSectionProps {
@@ -40,7 +40,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   const [pricesLoading, setPricesLoading] = useState(true);
 
-  const form = useForm<BookingFormData>({
+  const form = useForm<any>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       fullName: '',
@@ -49,12 +49,13 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       teamName: '',
       sportType: undefined,
       date: '',
-      timeSlot: '',
+      timeSlots: [],
     },
   });
 
   const watchedSport = form.watch('sportType');
   const watchedDate = form.watch('date');
+  const watchedTimeSlots = form.watch('timeSlots');
   
   const { slots, loading: slotsLoading, error: slotsError } = useSlots(watchedDate, watchedSport);
 
@@ -80,19 +81,17 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     return `SPT${timestamp}${randomStr}`.toUpperCase();
   };
 
-  const onSubmit = async (data: BookingFormData) => {
+  const onSubmit = async (data: any) => {
     setIsProcessing(true);
     try {
       const bookingId = generateBookingId();
-      const amount = prices && data.sportType ? prices[data.sportType] : 0;
-      
+      const amount = prices && data.sportType ? (prices[data.sportType] * data.timeSlots.length) : 0;
       const bookingData = {
         ...data,
         bookingId,
         amount,
         paymentStatus: 'pending',
       };
-
       // Initiate Razorpay payment
       await new Promise((resolve, reject) => {
         initiateRazorpayPayment({
@@ -109,7 +108,6 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
               };
               const bookingResult = await attemptBookingWithSlotCheck(finalBookingData);
               if (bookingResult.success) {
-                // Success: send notifications
                 if (data.email) {
                   await sendBookingConfirmation(finalBookingData);
                 }
@@ -122,7 +120,6 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 form.reset();
                 resolve(paymentData);
               } else if (bookingResult.reason === 'Slot already booked') {
-                // Double booking detected after payment
                 await logFailedPayment({
                   ...finalBookingData,
                   reason: 'Slot already booked',
@@ -130,12 +127,11 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 });
                 toast({
                   title: 'Slot Unavailable',
-                  description: `Payment received (ID: ${paymentData.razorpay_payment_id}), but the slot was just booked by someone else. Please contact support for a refund.`,
+                  description: `Payment received (ID: ${paymentData.razorpay_payment_id}), but one or more slots were just booked by someone else. Please contact support for a refund.`,
                   variant: 'destructive',
                 });
                 reject(new Error('Slot already booked'));
               } else {
-                // Other booking failure after payment
                 await logFailedPayment({
                   ...finalBookingData,
                   reason: bookingResult.error || 'Unknown error',
@@ -175,7 +171,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   };
 
   const selectedSport = watchedSport;
-  const totalAmount = selectedSport && prices ? prices[selectedSport] : 0;
+  const totalAmount = selectedSport && prices ? (prices[selectedSport] * (watchedTimeSlots?.length || 0)) : 0;
 
   return (
     <section id="booking" className="py-20 bg-white">
@@ -304,7 +300,6 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   <Label className="text-sm font-semibold text-gray-700 mb-4 block">
                     Available Time Slots *
                   </Label>
-                  
                   {slotsLoading ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                       {Array.from({ length: 8 }).map((_, i) => (
@@ -317,50 +312,75 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     </div>
                   ) : watchedDate && watchedSport ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {slots.map((slot) => (
-                        <Label key={slot.time} className={`cursor-pointer group ${!slot.available ? 'cursor-not-allowed' : ''}`}>
-                          <input
-                            type="radio"
-                            value={slot.time}
-                            {...form.register('timeSlot')}
-                            disabled={!slot.available}
-                            className="sr-only peer"
-                          />
-                          <div className={`p-4 rounded-xl border-2 text-center transition-all duration-200 ${
-                            slot.available 
-                              ? 'border-gray-200 peer-checked:border-primary peer-checked:bg-primary/10 group-hover:border-primary/50' 
-                              : slot.booked 
-                                ? 'border-gray-300 bg-gray-100' 
-                                : 'border-red-200 bg-red-50'
-                          }`}>
-                            <div className={`font-bold ${
-                              slot.available 
-                                ? 'text-gray-900 group-hover:text-primary' 
-                                : 'text-gray-400'
+                      {slots.map((slot, idx) => {
+                        const checked = watchedTimeSlots?.includes(slot.time);
+                        // Only allow selecting consecutive slots
+                        const isDisabled = !slot.available || (
+                          watchedTimeSlots?.length > 0 &&
+                          !checked &&
+                          (
+                            idx !== slots.findIndex(s => s.time === watchedTimeSlots[0]) - 1 &&
+                            idx !== slots.findIndex(s => s.time === watchedTimeSlots[watchedTimeSlots.length - 1]) + 1
+                          )
+                        );
+                        return (
+                          <Label key={slot.time} className={`cursor-pointer group ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}>
+                            <input
+                              type="checkbox"
+                              value={slot.time}
+                              checked={checked}
+                              onChange={e => {
+                                const value = slot.time;
+                                let newSlots = watchedTimeSlots ? [...watchedTimeSlots] : [];
+                                if (e.target.checked) {
+                                  newSlots.push(value);
+                                  // Sort slots by their order in the slots array
+                                  newSlots = newSlots.sort((a, b) => slots.findIndex(s => s.time === a) - slots.findIndex(s => s.time === b));
+                                } else {
+                                  newSlots = newSlots.filter(s => s !== value);
+                                }
+                                form.setValue('timeSlots', newSlots);
+                              }}
+                              disabled={isDisabled}
+                              className="sr-only peer"
+                            />
+                            <div className={`p-4 rounded-xl border-2 text-center transition-all duration-200 ${
+                              checked
+                                ? 'border-primary bg-primary/10'
+                                : slot.available
+                                  ? 'border-gray-200 group-hover:border-primary/50'
+                                  : slot.booked
+                                    ? 'border-gray-300 bg-gray-100'
+                                    : 'border-red-200 bg-red-50'
                             }`}>
-                              {slot.display}
+                              <div className={`font-bold ${
+                                slot.available
+                                  ? 'text-gray-900 group-hover:text-primary'
+                                  : 'text-gray-400'
+                              }`}>
+                                {slot.display}
+                              </div>
+                              <div className={`text-sm font-semibold ${
+                                slot.available
+                                  ? 'text-primary'
+                                  : slot.booked
+                                    ? 'text-red-500'
+                                    : 'text-red-500'
+                              }`}>
+                                {slot.available ? 'Available' : slot.booked ? 'Booked' : 'Blocked'}
+                              </div>
                             </div>
-                            <div className={`text-sm font-semibold ${
-                              slot.available 
-                                ? 'text-primary' 
-                                : slot.booked 
-                                  ? 'text-red-500' 
-                                  : 'text-red-500'
-                            }`}>
-                              {slot.available ? 'Available' : slot.booked ? 'Booked' : 'Blocked'}
-                            </div>
-                          </div>
-                        </Label>
-                      ))}
+                          </Label>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       Please select sport and date to view available slots
                     </div>
                   )}
-                  
-                  {form.formState.errors.timeSlot && (
-                    <p className="text-red-500 text-sm mt-3">{form.formState.errors.timeSlot.message}</p>
+                  {form.formState.errors.timeSlots && (
+                    <p className="text-red-500 text-sm mt-3">{form.formState.errors.timeSlots.message}</p>
                   )}
                 </div>
 
@@ -373,7 +393,11 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     </div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-gray-700">Duration:</span>
-                      <span className="font-semibold">1 Hour</span>
+                      <span className="font-semibold">{watchedTimeSlots?.length || 0} Hour(s)</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-700">Selected Slots:</span>
+                      <span className="font-semibold">{watchedTimeSlots?.join(', ')}</span>
                     </div>
                     <div className="flex justify-between items-center text-xl font-bold text-primary">
                       <span>Total Amount:</span>
