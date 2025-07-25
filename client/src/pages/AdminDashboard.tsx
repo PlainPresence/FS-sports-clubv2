@@ -434,17 +434,21 @@ export default function AdminDashboard() {
                               value={slotPricesEdit[sport.id] ?? ''}
                               onChange={(e) => handleSlotPriceChange(sport.id, e.target.value)}
                               className="border rounded px-2 py-1 w-24"
-                              disabled={slotPricesSaving[sport.id]}
+                              disabled={sport.id !== 'cricket'}
                             />
                           </td>
                           <td className="px-6 py-4 text-sm">
-                            <Button
-                              size="sm"
-                              onClick={() => handleSlotPriceSave(sport.id)}
-                              disabled={slotPricesSaving[sport.id] || slotPricesEdit[sport.id] === slotPrices?.[sport.id]}
-                            >
-                              {slotPricesSaving[sport.id] ? 'Saving...' : 'Save'}
-                            </Button>
+                            {sport.id === 'cricket' ? (
+                              <Button
+                                size="sm"
+                                onClick={() => handleSlotPriceSave(sport.id)}
+                                disabled={slotPricesSaving[sport.id] || slotPricesEdit[sport.id] === slotPrices?.[sport.id]}
+                              >
+                                {slotPricesSaving[sport.id] ? 'Saving...' : 'Save'}
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">N/A</span>
+                            )}
                           </td>
                         </tr>
                       ))}
