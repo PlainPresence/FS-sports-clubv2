@@ -22,7 +22,8 @@ export interface BookingFormData {
   teamName?: string;
   sportType: string;
   date: string;
-  timeSlot: string;
+  timeSlots: string[]; // Multi-hour booking support
+  // timeSlot: string; // Deprecated
 }
 
 export interface BookingData extends BookingFormData {
