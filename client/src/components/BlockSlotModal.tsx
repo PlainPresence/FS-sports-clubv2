@@ -141,6 +141,7 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
                 </Label>
                 <Input
                   {...register('date', { required: 'Date is required' })}
+                  id="date"
                   type="date"
                   min={new Date().toISOString().split('T')[0]}
                   className="h-10"
@@ -151,11 +152,11 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
               </div>
 
               <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                <Label htmlFor="sportType" className="text-sm font-semibold text-gray-700 mb-2 block">
                   Sport Type *
                 </Label>
                 <Select onValueChange={(value) => setValue('sportType', value)}>
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger id="sportType" className="h-10">
                     <SelectValue placeholder="Select sport" />
                   </SelectTrigger>
                   <SelectContent>
@@ -171,11 +172,11 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
               </div>
 
               <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                <Label htmlFor="timeSlot" className="text-sm font-semibold text-gray-700 mb-2 block">
                   Time Slot *
                 </Label>
                 <Select onValueChange={(value) => setValue('timeSlot', value)}>
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger id="timeSlot" className="h-10">
                     <SelectValue placeholder="Select time slot" />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,6 +198,7 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
                 </Label>
                 <Input
                   {...register('reason')}
+                  id="reason"
                   placeholder="e.g., Maintenance, Event, etc."
                   className="h-10"
                 />
