@@ -167,7 +167,7 @@ export default function SportsSection() {
                       <>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
-                          <span>65x110 ft Premium Turf</span>
+                          <span>65x110 ft Premium Full Size Cricket Tournament Turf</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
