@@ -94,9 +94,24 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     try {
       const bookingId = generateBookingId();
       const slotCount = watchedTimeSlots?.length || 0;
-      const amount = prices && data.facilityType
-        ? ((prices[data.facilityType] || 0) * data.timeSlots.length) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0)
-        : 0;
+      
+      // Calculate amount based on sport type and slot duration
+      let amount = 0;
+      if (prices && data.facilityType) {
+        const basePrice = prices[data.facilityType] || 0;
+        if (data.facilityType === 'airhockey') {
+          // For air hockey, each slot is 30 minutes, so multiply by 0.5
+          amount = (basePrice * 0.5 * data.timeSlots.length);
+        } else {
+          // For other sports, each slot is 1 hour
+          amount = (basePrice * data.timeSlots.length);
+        }
+        
+        // Add speed meter cost if applicable
+        if (speedMeter && prices['speedMeter']) {
+          amount += prices['speedMeter'] * data.timeSlots.length;
+        }
+      }
       const bookingData = {
         ...data,
         bookingId,
@@ -186,9 +201,24 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
 
   const selectedFacility = watchedFacility;
   const slotCount = watchedTimeSlots?.length || 0;
-  const totalAmount = prices && watchedFacility
-    ? ((prices[watchedFacility] || 0) * slotCount) + (speedMeter && prices['speedMeter'] ? prices['speedMeter'] * slotCount : 0)
-    : 0;
+  
+  // Calculate total amount for display
+  let totalAmount = 0;
+  if (prices && watchedFacility) {
+    const basePrice = prices[watchedFacility] || 0;
+    if (watchedFacility === 'airhockey') {
+      // For air hockey, each slot is 30 minutes, so multiply by 0.5
+      totalAmount = (basePrice * 0.5 * slotCount);
+    } else {
+      // For other sports, each slot is 1 hour
+      totalAmount = (basePrice * slotCount);
+    }
+    
+    // Add speed meter cost if applicable
+    if (speedMeter && prices['speedMeter']) {
+      totalAmount += prices['speedMeter'] * slotCount;
+    }
+  }
 
   return (
     <section id="booking" className="py-20 bg-white">
@@ -294,7 +324,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                           onChange={() => form.setValue('facilityType', fac.id)}
                           className="w-4 h-4"
                         />
-                        <span className="text-gray-700 text-sm">{fac.label} {prices && prices[fac.id] ? `- ₹${prices[fac.id]}/hour` : ''}</span>
+                        <span className="text-gray-700 text-sm">{fac.label} {prices && prices[fac.id] ? `- ₹${prices[fac.id]}/${fac.id === 'airhockey' ? '30 min' : 'hour'}` : ''}</span>
                       </label>
                     ))}
                   </RadioGroup>
