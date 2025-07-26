@@ -13,7 +13,6 @@ import BlockSlotModal from '@/components/BlockSlotModal';
 import BlockDateModal from '@/components/BlockDateModal';
 import { updateBooking, getSlotPrices, updateSlotPrice } from '@/lib/firebase';
 import { BookingData } from '@/types';
-import { saveAs } from 'file-saver';
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -150,7 +149,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditClick = (booking: BookingData) => {
-    setEditingId(booking.id);
+    setEditingId(booking.id || null);
     setEditingAmount(booking.amount || 0);
   };
 
