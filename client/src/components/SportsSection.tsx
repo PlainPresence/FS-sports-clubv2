@@ -16,7 +16,7 @@ const sports: SportInfo[] = [
   {
     id: 'snooker',
     name: 'Snooker Table',
-    icon: 'fas fa-circle', // use a pool icon or similar
+    icon: 'fas fa-billiards', // use a pool icon or similar
     price: 600,
     description: 'Professional snooker table for casual and competitive play',
     color: 'secondary',
@@ -24,7 +24,7 @@ const sports: SportInfo[] = [
   {
     id: 'pool',
     name: '8 Ball Pool',
-    icon: 'fas fa-dot-circle', // use a pool icon or similar
+    icon: 'fas fa-pool-table', // use a pool icon or similar
     price: 500,
     description: '8 Ball Pool table with quality cues and balls',
     color: 'amber-600',
@@ -101,7 +101,7 @@ export default function SportsSection() {
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{sport.name}</h3>
                 <p className="text-gray-600 mb-4">{sport.description}</p>
                 <div className={`text-sm text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color} font-semibold`}>
-                  ₹{sport.price}/hour
+                  ₹{sport.price}/{sport.id === 'airhockey' ? '30 min' : 'hour'}
                 </div>
               </motion.div>
             ))}
