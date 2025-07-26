@@ -16,7 +16,7 @@ const sports: SportInfo[] = [
   {
     id: 'snooker',
     name: 'Snooker Table',
-    icon: 'fas fa-billiards',
+    icon: 'fas fa-dot-circle',
     price: 600,
     description: 'Professional snooker table for casual and competitive play',
     color: 'secondary',
@@ -24,7 +24,7 @@ const sports: SportInfo[] = [
   {
     id: 'pool',
     name: '8 Ball Pool',
-    icon: 'fas fa-pool-table',
+    icon: 'fas fa-circle',
     price: 500,
     description: '8 Ball Pool table with quality cues and balls',
     color: 'amber-600',
