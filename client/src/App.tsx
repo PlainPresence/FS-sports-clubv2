@@ -9,6 +9,28 @@ import Home from "@/pages/Home";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
+import { ErrorBoundary } from "react-error-boundary";
+
+// Error Fallback Component
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md mx-auto text-center p-6">
+        <div className="text-red-500 text-6xl mb-4">
+          <i className="fas fa-exclamation-triangle"></i>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
+        <p className="text-gray-600 mb-6">{error.message}</p>
+        <button
+          onClick={resetErrorBoundary}
+          className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Load Font Awesome
 const fontAwesome = document.createElement('link');
@@ -29,15 +51,17 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <ConnectionStatus />
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <ConnectionStatus />
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
