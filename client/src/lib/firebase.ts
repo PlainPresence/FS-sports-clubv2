@@ -153,8 +153,11 @@ export const getSlotPrices = async () => {
   try {
     const pricesSnapshot = await getDocs(collection(db, "slotPrices"));
     const prices: Record<string, number> = {};
-    pricesSnapshot.forEach((docSnap: QueryDocumentSnapshot<{ price: number }>) => {
-      prices[docSnap.id] = docSnap.data().price;
+    pricesSnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data && typeof data.price === 'number') {
+        prices[docSnap.id] = data.price;
+      }
     });
     return prices;
   } catch (error: any) {
