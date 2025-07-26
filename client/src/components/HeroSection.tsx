@@ -35,82 +35,146 @@ export default function HeroSection({ onBookNowClick }: HeroSectionProps) {
           style={{ backgroundImage: `url('${img}')` }}
         />
       ))}
-      {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-60 z-0" />
-      <div className="relative z-10 max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 text-center">
+      {/* Enhanced overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70 z-0" />
+      
+      {/* Floating elements for visual interest */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-20 left-10 w-20 h-20 bg-primary/20 rounded-full blur-xl"></div>
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-secondary/20 rounded-full blur-xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-red-500/20 rounded-full blur-xl"></div>
+      </div>
+      
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="mb-12"
         >
-          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-            Premium Multi-Sport
-            <span className="block text-primary">Turf Experience</span>
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6"
+          >
+            <i className="fas fa-star text-yellow-400 mr-2"></i>
+            <span className="text-white text-sm font-medium">Premium Sports Facility</span>
+          </motion.div>
+          
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 leading-tight">
+            <span className="block">Premium Multi-Sport</span>
+            <span className="block bg-gradient-to-r from-primary via-secondary to-red-500 bg-clip-text text-transparent">
+              Turf Experience
+            </span>
           </h1>
-          <p className="text-base sm:text-lg md:text-2xl text-gray-200 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
-            State-of-the-art facilities for Cricket, Football, Badminton & more. Book your perfect playing time with instant confirmation.
+          
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-200 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed font-light">
+            Experience world-class facilities for Cricket, Snooker, Pool & Air Hockey. 
+            <span className="block mt-2">Book your perfect playing time with instant confirmation and secure payments.</span>
           </p>
         </motion.div>
-        {/* Key Features */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+        
+        {/* Enhanced Key Features */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <motion.div 
-            className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6"
-            initial={{ opacity: 0, y: 20 }}
+            className="group bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <i className="fas fa-clock text-white text-lg sm:text-xl"></i>
+            <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <i className="fas fa-clock text-white text-xl"></i>
             </div>
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 sm:mb-2">24/7 Booking</h3>
-            <p className="text-gray-200 text-xs sm:text-sm">Book anytime, anywhere with instant confirmation</p>
+            <h3 className="text-lg font-bold text-white mb-2">24/7 Booking</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">Book anytime, anywhere with instant confirmation and real-time availability</p>
           </motion.div>
 
           <motion.div 
-            className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6"
-            initial={{ opacity: 0, y: 20 }}
+            className="group bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <i className="fas fa-shield-alt text-white text-lg sm:text-xl"></i>
+            <div className="w-14 h-14 bg-gradient-to-br from-secondary to-secondary/80 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <i className="fas fa-shield-alt text-white text-xl"></i>
             </div>
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 sm:mb-2">Secure Payments</h3>
-            <p className="text-gray-200 text-xs sm:text-sm">Safe & secure online payments with Razorpay</p>
+            <h3 className="text-lg font-bold text-white mb-2">Secure Payments</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">Safe & secure online payments with Razorpay integration</p>
           </motion.div>
 
           <motion.div 
-            className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6"
-            initial={{ opacity: 0, y: 20 }}
+            className="group bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <i className="fas fa-trophy text-white text-xl"></i>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Pro Facilities</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">Professional-grade equipment and premium playing surfaces</p>
+          </motion.div>
+
+          <motion.div 
+            className="group bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <i className="fas fa-trophy text-white text-lg sm:text-xl"></i>
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <i className="fas fa-whatsapp text-white text-xl"></i>
             </div>
-            <h3 className="text-base sm:text-lg font-semibold text-white mb-1 sm:mb-2">Pro Facilities</h3>
-            <p className="text-gray-200 text-xs sm:text-sm">Professional-grade equipment and surfaces</p>
+            <h3 className="text-lg font-bold text-white mb-2">Instant Updates</h3>
+            <p className="text-gray-300 text-sm leading-relaxed">WhatsApp confirmations and real-time booking updates</p>
           </motion.div>
         </div>
-        <motion.button 
-          onClick={onBookNowClick}
-          className="bg-primary hover:bg-primary-dark text-white px-8 sm:px-12 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          initial={{ opacity: 0, y: 20 }}
+        
+        {/* Enhanced CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          Book Your Slot Now
-          <i className="fas fa-arrow-right ml-2"></i>
-        </motion.button>
-      </div>
-      {/* Animated scroll-down indicator */}
-      <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-10 flex flex-col items-center">
-        <span className="text-white text-xs mb-1 animate-pulse">Scroll Down</span>
-        <svg className="w-6 h-6 text-white animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+          <button 
+            onClick={onBookNowClick}
+            className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-primary/25 focus:outline-none focus:ring-4 focus:ring-primary/30"
+          >
+            <i className="fas fa-calendar-check mr-3 group-hover:rotate-12 transition-transform duration-300"></i>
+            Book Your Slot Now
+          </button>
+          
+          <button 
+            onClick={() => document.getElementById('sports')?.scrollIntoView({ behavior: 'smooth' })}
+            className="group bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-semibold border-2 border-white/30 hover:border-white/50 transition-all duration-300 transform hover:scale-105"
+          >
+            <i className="fas fa-trophy mr-3 group-hover:rotate-12 transition-transform duration-300"></i>
+            View Facilities
+          </button>
+        </motion.div>
+        
+        {/* Trust indicators */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1 }}
+          className="mt-12 flex flex-wrap justify-center items-center gap-6 text-white/70"
+        >
+          <div className="flex items-center">
+            <i className="fas fa-check-circle text-green-400 mr-2"></i>
+            <span className="text-sm">1000+ Happy Customers</span>
+          </div>
+          <div className="flex items-center">
+            <i className="fas fa-check-circle text-green-400 mr-2"></i>
+            <span className="text-sm">Instant Booking</span>
+          </div>
+          <div className="flex items-center">
+            <i className="fas fa-check-circle text-green-400 mr-2"></i>
+            <span className="text-sm">Secure Payments</span>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
