@@ -46,7 +46,8 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     try {
       // Use secure WebSocket in production, regular in development
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const host = window.location.host || 'localhost:5000';
+      const wsUrl = `${protocol}//${host}/ws`;
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
