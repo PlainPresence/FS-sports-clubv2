@@ -8,7 +8,7 @@ const sports: SportInfo[] = [
   {
     id: 'cricket',
     name: 'Cricket',
-    icon: 'fas fa-baseball-ball',
+    icon: 'cricket',
     price: 900,
     description: 'Premium cricket turf (65x110 ft), floodlights, canteen, and speed meter add-on',
     color: 'primary',
@@ -16,7 +16,7 @@ const sports: SportInfo[] = [
   {
     id: 'snooker',
     name: 'Snooker Table',
-    icon: 'fas fa-dot-circle',
+    icon: 'snooker',
     price: 600,
     description: 'Professional snooker table for casual and competitive play',
     color: 'secondary',
@@ -24,7 +24,7 @@ const sports: SportInfo[] = [
   {
     id: 'pool',
     name: '8 Ball Pool',
-    icon: 'fas fa-circle',
+    icon: 'pool',
     price: 500,
     description: '8 Ball Pool table with quality cues and balls',
     color: 'amber-600',
@@ -32,12 +32,45 @@ const sports: SportInfo[] = [
   {
     id: 'airhockey',
     name: 'Air Hockey Table',
-    icon: 'fas fa-hockey-puck',
+    icon: 'airhockey',
     price: 400,
     description: 'Fast-paced air hockey table for all ages',
     color: 'purple-600',
   },
 ];
+
+// Custom SVG icons for each sport
+const SportIcons = {
+  cricket: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
+      <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
+      <circle cx="12" cy="12" r="3" fill="white"/>
+    </svg>
+  ),
+  snooker: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="12" cy="12" r="8"/>
+      <circle cx="12" cy="12" r="4" fill="white"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    </svg>
+  ),
+  pool: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="12" cy="12" r="6"/>
+      <circle cx="12" cy="12" r="2" fill="white"/>
+      <circle cx="12" cy="12" r="0.8" fill="currentColor"/>
+    </svg>
+  ),
+  airhockey: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
+      <rect x="2" y="2" width="20" height="20" rx="3" ry="3"/>
+      <circle cx="7" cy="7" r="2" fill="white"/>
+      <circle cx="17" cy="17" r="2" fill="white"/>
+      <line x1="12" y1="2" x2="12" y2="22" stroke="white" strokeWidth="1.5"/>
+      <line x1="2" y1="12" x2="22" y2="12" stroke="white" strokeWidth="1.5"/>
+    </svg>
+  ),
+};
 
 export default function SportsSection() {
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
@@ -105,7 +138,7 @@ export default function SportsSection() {
                 <div className="relative z-10">
                   {/* Icon */}
                   <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 to-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                    <i className={`${sport.icon} text-2xl sm:text-3xl text-white`}></i>
+                    {SportIcons[sport.icon as keyof typeof SportIcons]}
                   </div>
                   
                   {/* Title */}
