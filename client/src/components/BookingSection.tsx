@@ -221,26 +221,26 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   }
 
   return (
-    <section id="booking" className="py-24 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <section id="booking" className="py-12 sm:py-24 bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
-          className="text-center mb-16"
+          className="text-center mb-12 sm:mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
-            <i className="fas fa-calendar-check text-2xl text-primary"></i>
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-4 sm:mb-6">
+            <i className="fas fa-calendar-check text-xl sm:text-2xl text-primary"></i>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Reserve Your Time</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">Reserve Your Time</h2>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
             Secure your preferred slot with our streamlined booking process
           </p>
         </motion.div>
 
         {pricesLoading ? (
-          <div className="flex justify-center py-16">
+          <div className="flex justify-center py-12 sm:py-16">
             <LoadingSpinner size="lg" />
           </div>
         ) : (
@@ -249,24 +249,24 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: true }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8"
         >
           {/* Main Booking Form */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-8 md:p-10">
-                <div className="flex items-center mb-8 pb-6 border-b border-gray-100">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                    <i className="fas fa-user text-primary"></i>
+              <CardContent className="p-4 sm:p-6 md:p-8 lg:p-10">
+                <div className="flex items-center mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-gray-100">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                    <i className="fas fa-user text-primary text-sm sm:text-base"></i>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Personal Information</h3>
-                    <p className="text-gray-600 text-sm">Tell us about yourself</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Personal Information</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm">Tell us about yourself</p>
                   </div>
                 </div>
 
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700 flex items-center">
                         <i className="fas fa-user mr-2 text-primary"></i>
@@ -275,10 +275,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       <Input
                         {...form.register('fullName')}
                         placeholder="Enter your full name"
-                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                        className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
                       {form.formState.errors.fullName && (
-                        <p className="text-red-500 text-sm flex items-center">
+                        <p className="text-red-500 text-xs sm:text-sm flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {form.formState.errors.fullName.message}
                         </p>
@@ -294,10 +294,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         {...form.register('mobile')}
                         placeholder="+91 98765 43210"
                         type="tel"
-                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                        className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
                       {form.formState.errors.mobile && (
-                        <p className="text-red-500 text-sm flex items-center">
+                        <p className="text-red-500 text-xs sm:text-sm flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {form.formState.errors.mobile.message}
                         </p>
@@ -312,7 +312,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       <Input
                         {...form.register('teamName')}
                         placeholder="Your team name"
-                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                        className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
                     </div>
 
@@ -325,10 +325,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         {...form.register('email')}
                         placeholder="your@email.com"
                         type="email"
-                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                        className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
                       {form.formState.errors.email && (
-                        <p className="text-red-500 text-sm flex items-center">
+                        <p className="text-red-500 text-xs sm:text-sm flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {form.formState.errors.email.message}
                         </p>
@@ -339,21 +339,21 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   {/* Facility Selection */}
                   <div className="space-y-4">
                     <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                        <i className="fas fa-trophy text-primary"></i>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                        <i className="fas fa-trophy text-primary text-sm sm:text-base"></i>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">Select Facility</h3>
-                        <p className="text-gray-600 text-sm">Choose your preferred sport</p>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Select Facility</h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">Choose your preferred sport</p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {facilityOptions.map(fac => (
                         <label key={fac.id} className={`relative cursor-pointer group transition-all duration-200 ${
                           watchedFacility === fac.id 
-                            ? 'ring-2 ring-primary ring-offset-2' 
-                            : 'hover:ring-2 hover:ring-primary/50 ring-offset-2'
+                            ? 'ring-2 ring-primary ring-offset-1 sm:ring-offset-2' 
+                            : 'hover:ring-2 hover:ring-primary/50 ring-offset-1 sm:ring-offset-2'
                         }`}>
                           <input
                             type="radio"
@@ -363,27 +363,27 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                             onChange={() => form.setValue('facilityType', fac.id)}
                             className="sr-only"
                           />
-                          <div className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                          <div className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 ${
                             watchedFacility === fac.id
                               ? 'border-primary bg-primary/5'
                               : 'border-gray-200 bg-white hover:border-primary/30 hover:bg-primary/2'
                           }`}>
                             <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-semibold text-gray-900">{fac.label}</div>
+                              <div className="flex-1">
+                                <div className="font-semibold text-gray-900 text-sm sm:text-base">{fac.label}</div>
                                 {prices && prices[fac.id] && (
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-xs sm:text-sm text-gray-600">
                                     ₹{prices[fac.id]}/{fac.id === 'airhockey' ? '30 min' : 'hour'}
                                   </div>
                                 )}
                               </div>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center ml-2 ${
                                 watchedFacility === fac.id
                                   ? 'border-primary bg-primary'
                                   : 'border-gray-300'
                               }`}>
                                 {watchedFacility === fac.id && (
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                                 )}
                               </div>
                             </div>
@@ -396,12 +396,12 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   {/* Date Selection */}
                   <div className="space-y-4">
                     <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                        <i className="fas fa-calendar text-primary"></i>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                        <i className="fas fa-calendar text-primary text-sm sm:text-base"></i>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">Select Date</h3>
-                        <p className="text-gray-600 text-sm">Choose your preferred date</p>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Select Date</h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">Choose your preferred date</p>
                       </div>
                     </div>
                     
@@ -413,10 +413,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         {...form.register('date')}
                         type="date"
                         min={new Date().toISOString().split('T')[0]}
-                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200"
+                        className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
                       {form.formState.errors.date && (
-                        <p className="text-red-500 text-sm flex items-center">
+                        <p className="text-red-500 text-xs sm:text-sm flex items-center">
                           <i className="fas fa-exclamation-circle mr-1"></i>
                           {form.formState.errors.date.message}
                         </p>
@@ -427,28 +427,28 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   {/* Time Slot Selection */}
                   <div className="space-y-4">
                     <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                        <i className="fas fa-clock text-primary"></i>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                        <i className="fas fa-clock text-primary text-sm sm:text-base"></i>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">Select Time Slots</h3>
-                        <p className="text-gray-600 text-sm">Choose your preferred time slots</p>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Select Time Slots</h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">Choose your preferred time slots</p>
                       </div>
                     </div>
                     
                     {slotsLoading ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                         {Array.from({ length: 8 }).map((_, i) => (
-                          <Shimmer key={i} className="h-16 rounded-xl" />
+                          <Shimmer key={i} className="h-14 sm:h-16 rounded-xl" />
                         ))}
                       </div>
                     ) : slotsError ? (
-                      <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl">
-                        <i className="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p>{slotsError}</p>
+                      <div className="text-center py-6 sm:py-8 text-gray-500 bg-gray-50 rounded-xl">
+                        <i className="fas fa-exclamation-triangle text-xl sm:text-2xl mb-2"></i>
+                        <p className="text-sm sm:text-base">{slotsError}</p>
                       </div>
                     ) : watchedDate && watchedSport ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                         {slots.map((slot, idx) => {
                           const checked = watchedTimeSlots?.includes(slot.time);
                           const isDisabled = !slot.available;
@@ -472,7 +472,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                                 disabled={isDisabled}
                                 className="sr-only peer"
                               />
-                              <div className={`p-4 rounded-xl border-2 text-center transition-all duration-200 ${
+                              <div className={`p-3 sm:p-4 rounded-xl border-2 text-center transition-all duration-200 ${
                                 checked
                                   ? 'border-primary bg-primary/10 shadow-lg'
                                   : slot.available
@@ -481,7 +481,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                                       ? 'border-gray-300 bg-gray-100 opacity-60'
                                       : 'border-red-200 bg-red-50 opacity-60'
                               }`}>
-                                <div className={`font-bold text-sm ${
+                                <div className={`font-bold text-xs sm:text-sm ${
                                   slot.available
                                     ? 'text-gray-900 group-hover:text-primary'
                                     : 'text-gray-400'
@@ -503,13 +503,13 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl">
-                        <i className="fas fa-calendar-plus text-2xl mb-2"></i>
-                        <p>Please select sport and date to view available slots</p>
+                      <div className="text-center py-6 sm:py-8 text-gray-500 bg-gray-50 rounded-xl">
+                        <i className="fas fa-calendar-plus text-xl sm:text-2xl mb-2"></i>
+                        <p className="text-sm sm:text-base">Please select sport and date to view available slots</p>
                       </div>
                     )}
                     {form.formState.errors.timeSlots && (
-                      <p className="text-red-500 text-sm flex items-center">
+                      <p className="text-red-500 text-xs sm:text-sm flex items-center">
                         <i className="fas fa-exclamation-circle mr-1"></i>
                         {form.formState.errors.timeSlots.message}
                       </p>
@@ -519,30 +519,30 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                   {/* Speed Meter Add-on */}
                   <div className="space-y-4">
                     <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-                        <i className="fas fa-tachometer-alt text-primary"></i>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                        <i className="fas fa-tachometer-alt text-primary text-sm sm:text-base"></i>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">Add-ons</h3>
-                        <p className="text-gray-600 text-sm">Enhance your experience</p>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Add-ons</h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">Enhance your experience</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                    <div className="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
                       <input
                         type="checkbox"
                         id="speedMeter"
                         checked={speedMeter}
                         onChange={e => setSpeedMeter(e.target.checked)}
-                        className="w-5 h-5 mr-3 text-primary focus:ring-primary/20"
+                        className="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-primary focus:ring-primary/20"
                         disabled={pricesLoading || !prices || !('speedMeter' in prices)}
                       />
                       <Label htmlFor="speedMeter" className="text-gray-700 font-medium cursor-pointer flex-1">
-                        <div className="font-semibold">Speed Meter</div>
-                        <div className="text-sm text-gray-600">Check ball speed during play</div>
+                        <div className="font-semibold text-sm sm:text-base">Speed Meter</div>
+                        <div className="text-xs sm:text-sm text-gray-600">Check ball speed during play</div>
                       </Label>
                       {prices && prices['speedMeter'] && (
-                        <div className="text-primary font-semibold">+₹{prices['speedMeter']}</div>
+                        <div className="text-primary font-semibold text-sm sm:text-base">+₹{prices['speedMeter']}</div>
                       )}
                     </div>
                   </div>
@@ -551,33 +551,33 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
             </Card>
           </div>
 
-          {/* Pricing Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
+          {/* Pricing Summary Sidebar - Mobile Optimized */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-8">
               <Card className="shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-primary/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-6 pb-4 border-b border-primary/20">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mr-3">
-                      <i className="fas fa-receipt text-primary"></i>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-primary/20">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/20 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                      <i className="fas fa-receipt text-primary text-sm sm:text-base"></i>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">Booking Summary</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Booking Summary</h3>
                   </div>
 
                   {selectedFacility ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Facility:</span>
-                        <span className="font-semibold capitalize">{facilityOptions.find(opt => opt.id === selectedFacility)?.label || selectedFacility}</span>
+                        <span className="text-gray-600 text-sm sm:text-base">Facility:</span>
+                        <span className="font-semibold capitalize text-sm sm:text-base">{facilityOptions.find(opt => opt.id === selectedFacility)?.label || selectedFacility}</span>
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Duration:</span>
-                        <span className="font-semibold">
+                        <span className="text-gray-600 text-sm sm:text-base">Duration:</span>
+                        <span className="font-semibold text-sm sm:text-base">
                           {slotCount} {selectedFacility === 'airhockey' ? '30-min slot(s)' : 'hour(s)'}
                         </span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-xs sm:text-sm">
                         <span className="text-gray-600">Base Price:</span>
                         <span className="font-semibold">
                           ₹{prices && prices[selectedFacility] ? prices[selectedFacility] : 0} x {slotCount} = ₹{prices && prices[selectedFacility] ? 
@@ -586,25 +586,25 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </div>
                       
                       {speedMeter && prices && prices['speedMeter'] && (
-                        <div className="flex justify-between items-center text-sm">
+                        <div className="flex justify-between items-center text-xs sm:text-sm">
                           <span className="text-gray-600">Speed Meter:</span>
                           <span className="font-semibold">+₹{prices['speedMeter']} x {slotCount} = ₹{prices['speedMeter'] * slotCount}</span>
                         </div>
                       )}
                       
-                      <div className="pt-4 border-t border-primary/20">
-                        <div className="flex justify-between items-center text-xl font-bold text-primary">
+                      <div className="pt-3 sm:pt-4 border-t border-primary/20">
+                        <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-primary">
                           <span>Total Amount:</span>
                           <span>₹{totalAmount}</span>
                         </div>
                       </div>
 
-                      {/* Submit Button */}
+                      {/* Submit Button - Mobile Optimized */}
                       <Button 
                         type="submit"
                         disabled={isProcessing}
                         onClick={form.handleSubmit(onSubmit)}
-                        className="w-full bg-primary hover:bg-primary/90 text-white py-4 h-auto text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-6"
+                        className="w-full bg-primary hover:bg-primary/90 text-white py-3 sm:py-4 h-auto text-base sm:text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-4 sm:mt-6"
                       >
                         {isProcessing ? (
                           <>
@@ -620,9 +620,9 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Button>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <i className="fas fa-info-circle text-2xl mb-2"></i>
-                      <p>Select a facility to see pricing</p>
+                    <div className="text-center py-6 sm:py-8 text-gray-500">
+                      <i className="fas fa-info-circle text-xl sm:text-2xl mb-2"></i>
+                      <p className="text-sm sm:text-base">Select a facility to see pricing</p>
                     </div>
                   )}
                 </CardContent>
