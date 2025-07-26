@@ -166,15 +166,15 @@ export default function SportsSection() {
                     {sport.id === 'cricket' && (
                       <>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
-                          <span>65x110 ft Premium Full Size Cricket Tournament Turf</span>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
+                          <span>65x110 ft Premium Turf</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Professional Floodlights</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Speed Meter Available</span>
                         </div>
                       </>
@@ -182,15 +182,15 @@ export default function SportsSection() {
                     {sport.id === 'snooker' && (
                       <>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Professional Table</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Quality Cues & Balls</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Air Conditioned</span>
                         </div>
                       </>
@@ -198,15 +198,15 @@ export default function SportsSection() {
                     {sport.id === 'pool' && (
                       <>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>8 Ball Pool Table</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Professional Equipment</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Comfortable Seating</span>
                         </div>
                       </>
@@ -214,15 +214,15 @@ export default function SportsSection() {
                     {sport.id === 'airhockey' && (
                       <>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Fast-Paced Action</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>30-Minute Sessions</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
+                          <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>All Ages Welcome</span>
                         </div>
                       </>
@@ -234,7 +234,7 @@ export default function SportsSection() {
                     onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
                     className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 px-4 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base`}
                   >
-                    <i className="fas fa-calendar-check mr-2"></i>
+                    <span className="mr-2">📅</span>
                     Book Now
                   </button>
                 </div>
@@ -260,7 +260,7 @@ export default function SportsSection() {
               onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
               className="bg-white text-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
-              <i className="fas fa-calendar-check mr-2"></i>
+              <span className="mr-2">📅</span>
               Book Your Slot
             </button>
           </div>
