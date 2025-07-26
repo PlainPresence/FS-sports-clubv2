@@ -151,7 +151,7 @@ export default function AdminDashboard() {
 
   const handleEditClick = (booking: BookingData) => {
     setEditingId(booking.id);
-    setEditingAmount(booking.amount);
+    setEditingAmount(booking.amount || 0);
   };
 
   const handleEditCancel = () => {
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditSave = async (booking: BookingData) => {
-    if (!booking.id || editingAmount == null || isNaN(editingAmount)) return;
+    if (!booking.id || editingAmount == null || isNaN(editingAmount) || editingAmount < 0) return;
     setSaving(true);
     const result = await updateBooking(booking.id, { amount: editingAmount });
     setSaving(false);
@@ -191,14 +191,15 @@ export default function AdminDashboard() {
 
   // Handler for editing slot price input
   const handleSlotPriceChange = (sport: string, value: string) => {
-    setSlotPricesEdit((prev) => ({ ...prev, [sport]: Number(value) }));
+    const numValue = Number(value);
+    setSlotPricesEdit((prev) => ({ ...prev, [sport]: isNaN(numValue) ? 0 : numValue }));
   };
 
   // Handler for saving slot price
   const handleSlotPriceSave = async (sport: string) => {
     setSlotPricesSaving((prev) => ({ ...prev, [sport]: true }));
     try {
-      const price = slotPricesEdit[sport];
+      const price = slotPricesEdit[sport] || 0;
       if (isNaN(price) || price <= 0) {
         toast({ title: 'Invalid Price', description: 'Please enter a valid price.', variant: 'destructive' });
         setSlotPricesSaving((prev) => ({ ...prev, [sport]: false }));
@@ -253,6 +254,8 @@ export default function AdminDashboard() {
     if (booking.timeSlot) return sum + 1;
     return sum;
   }, 0);
+
+  const totalRevenue = bookings.reduce((sum: number, b: BookingData) => sum + (b.amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -343,7 +346,7 @@ export default function AdminDashboard() {
                 <i className="fas fa-chart-line text-teal-600 text-2xl"></i>
               </div>
               <div>
-                <div className="text-2xl font-extrabold text-gray-900">₹{bookings.reduce((sum: number, b: BookingData) => sum + (b.amount || 0), 0).toLocaleString()}</div>
+                <div className="text-2xl font-extrabold text-gray-900">₹{totalRevenue.toLocaleString()}</div>
                 <div className="text-xs text-gray-600">Total Revenue</div>
               </div>
             </CardContent>
@@ -441,7 +444,7 @@ export default function AdminDashboard() {
                             <Button
                               size="sm"
                               onClick={() => handleSlotPriceSave(sport.id)}
-                              disabled={slotPricesSaving[sport.id] || slotPricesEdit[sport.id] === slotPrices?.[sport.id]}
+                              disabled={slotPricesSaving[sport.id] || (slotPricesEdit[sport.id] ?? 0) === (slotPrices?.[sport.id] ?? 0)}
                             >
                               {slotPricesSaving[sport.id] ? 'Saving...' : 'Save'}
                             </Button>
@@ -465,7 +468,7 @@ export default function AdminDashboard() {
                           <Button
                             size="sm"
                             onClick={() => handleSlotPriceSave('speedMeter')}
-                            disabled={slotPricesSaving['speedMeter'] || slotPricesEdit['speedMeter'] === slotPrices?.['speedMeter']}
+                            disabled={slotPricesSaving['speedMeter'] || (slotPricesEdit['speedMeter'] ?? 0) === (slotPrices?.['speedMeter'] ?? 0)}
                           >
                             {slotPricesSaving['speedMeter'] ? 'Saving...' : 'Save'}
                           </Button>
@@ -546,7 +549,7 @@ export default function AdminDashboard() {
                                   type="number"
                                   min={0}
                                   value={editingAmount ?? ''}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingAmount(Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingAmount(Number(e.target.value) || 0)}
                                   className="border rounded px-2 py-1 w-20"
                                   disabled={saving}
                                 />
@@ -559,7 +562,7 @@ export default function AdminDashboard() {
                               </div>
                             ) : (
                               <div className="flex items-center space-x-2">
-                                ₹{booking.amount}
+                                ₹{booking.amount || 0}
                                 <button
                                   className="text-blue-500 hover:text-blue-700 focus:outline-none"
                                   onClick={() => handleEditClick(booking)}
