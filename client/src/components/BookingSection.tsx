@@ -137,7 +137,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 razorpayOrderId: paymentData.razorpay_order_id,
               };
               const bookingResult = await attemptBookingWithSlotCheck(finalBookingData);
-              if (bookingResult.success) {
+              if (bookingResult && bookingResult.success) {
                 if (data.email) {
                   await sendBookingConfirmation(finalBookingData);
                 }
@@ -149,7 +149,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 onBookingSuccess(finalBookingData);
                 form.reset();
                 resolve(paymentData);
-              } else if (bookingResult.reason === 'Slot already booked') {
+              } else if (bookingResult && 'reason' in bookingResult && bookingResult.reason === 'Slot already booked') {
                 await logFailedPayment({
                   ...finalBookingData,
                   reason: 'Slot already booked',
@@ -164,7 +164,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
               } else {
                 await logFailedPayment({
                   ...finalBookingData,
-                  reason: bookingResult.error || 'Unknown error',
+                  reason: bookingResult?.error || 'Unknown error',
                   needsRefund: true,
                 });
                 toast({
