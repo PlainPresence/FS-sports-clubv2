@@ -274,6 +274,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Label>
                       <Input
                         {...form.register('fullName')}
+                        id="fullName"
                         placeholder="Enter your full name"
                         className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
@@ -292,6 +293,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Label>
                       <Input
                         {...form.register('mobile')}
+                        id="mobile"
                         placeholder="+91 98765 43210"
                         type="tel"
                         className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
@@ -311,6 +313,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Label>
                       <Input
                         {...form.register('teamName')}
+                        id="teamName"
                         placeholder="Your team name"
                         className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
                       />
@@ -323,6 +326,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Label>
                       <Input
                         {...form.register('email')}
+                        id="email"
                         placeholder="your@email.com"
                         type="email"
                         className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
@@ -411,6 +415,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       </Label>
                       <Input
                         {...form.register('date')}
+                        id="date"
                         type="date"
                         min={new Date().toISOString().split('T')[0]}
                         className="h-11 sm:h-12 border-gray-200 focus:border-primary focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base"
