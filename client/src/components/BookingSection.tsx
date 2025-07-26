@@ -47,7 +47,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     { id: 'pool', label: '8 Ball Pool' },
     { id: 'airhockey', label: 'Air Hockey Table' },
   ];
-  const form = useForm<any>({
+  const form = useForm<z.infer<typeof bookingSchema>>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       fullName: '',
@@ -119,6 +119,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         paymentStatus: 'pending',
         speedMeter,
         speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
+        sportType: data.facilityType, // Add sportType field for consistency
         facilityType: data.facilityType,
       };
       // Initiate Razorpay payment
