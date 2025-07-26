@@ -62,12 +62,13 @@ class WebSocketManager {
 
     // Set up heartbeat to detect dead connections
     setInterval(() => {
-      this.wss.clients.forEach((ws: WebSocketClient) => {
-        if (ws.isAlive === false) {
-          return ws.terminate();
+      this.wss.clients.forEach((ws: any) => {
+        const wsClient = ws as WebSocketClient;
+        if (wsClient.isAlive === false) {
+          return wsClient.terminate();
         }
-        ws.isAlive = false;
-        ws.ping();
+        wsClient.isAlive = false;
+        wsClient.ping();
       });
     }, 30000); // Check every 30 seconds
   }
