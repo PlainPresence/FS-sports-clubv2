@@ -23,28 +23,61 @@ interface BlockSlotForm {
   reason?: string;
 }
 
-const TIME_SLOTS = [
-  { value: '06:00-07:00', label: '6:00 - 7:00 AM' },
-  { value: '07:00-08:00', label: '7:00 - 8:00 AM' },
-  { value: '08:00-09:00', label: '8:00 - 9:00 AM' },
-  { value: '09:00-10:00', label: '9:00 - 10:00 AM' },
-  { value: '10:00-11:00', label: '10:00 - 11:00 AM' },
-  { value: '11:00-12:00', label: '11:00 AM - 12:00 PM' },
-  { value: '14:00-15:00', label: '2:00 - 3:00 PM' },
-  { value: '15:00-16:00', label: '3:00 - 4:00 PM' },
-  { value: '16:00-17:00', label: '4:00 - 5:00 PM' },
-  { value: '17:00-18:00', label: '5:00 - 6:00 PM' },
-  { value: '18:00-19:00', label: '6:00 - 7:00 PM' },
-  { value: '19:00-20:00', label: '7:00 - 8:00 PM' },
-  { value: '20:00-21:00', label: '8:00 - 9:00 PM' },
-  { value: '21:00-22:00', label: '9:00 - 10:00 PM' },
-];
+// Generate time slots based on sport type
+const generateTimeSlots = (sportType: string) => {
+  if (sportType === 'airhockey') {
+    // Generate 30-minute slots for air hockey
+    return Array.from({ length: 48 }, (_, i) => {
+      const startHour = Math.floor(i / 2);
+      const startMinute = (i % 2) * 30;
+      const endHour = Math.floor((i + 1) / 2);
+      const endMinute = ((i + 1) % 2) * 30;
+      
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const start = `${pad(startHour)}:${pad(startMinute)}`;
+      const end = `${pad(endHour)}:${pad(endMinute)}`;
+      
+      // Format for display
+      const format = (h: number, m: number) => {
+        const hour = h % 12 === 0 ? 12 : h % 12;
+        const ampm = h < 12 ? 'AM' : 'PM';
+        return `${hour}:${pad(m)} ${ampm}`;
+      };
+      
+      return {
+        value: `${start}-${end}`,
+        label: `${format(startHour, startMinute)} - ${format(endHour, endMinute)}`,
+      };
+    });
+  } else {
+    // Generate 1-hour slots for other sports
+    return [
+      { value: '06:00-07:00', label: '6:00 - 7:00 AM' },
+      { value: '07:00-08:00', label: '7:00 - 8:00 AM' },
+      { value: '08:00-09:00', label: '8:00 - 9:00 AM' },
+      { value: '09:00-10:00', label: '9:00 - 10:00 AM' },
+      { value: '10:00-11:00', label: '10:00 - 11:00 AM' },
+      { value: '11:00-12:00', label: '11:00 AM - 12:00 PM' },
+      { value: '14:00-15:00', label: '2:00 - 3:00 PM' },
+      { value: '15:00-16:00', label: '3:00 - 4:00 PM' },
+      { value: '16:00-17:00', label: '4:00 - 5:00 PM' },
+      { value: '17:00-18:00', label: '5:00 - 6:00 PM' },
+      { value: '18:00-19:00', label: '6:00 - 7:00 PM' },
+      { value: '19:00-20:00', label: '7:00 - 8:00 PM' },
+      { value: '20:00-21:00', label: '8:00 - 9:00 PM' },
+      { value: '21:00-22:00', label: '9:00 - 10:00 PM' },
+    ];
+  }
+};
 
 export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlotModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<BlockSlotForm>();
+  
+  const watchedSportType = watch('sportType');
+  const timeSlots = watchedSportType ? generateTimeSlots(watchedSportType) : [];
 
   const onSubmit = async (data: BlockSlotForm) => {
     setIsSubmitting(true);
@@ -127,9 +160,9 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cricket">Cricket</SelectItem>
-                    <SelectItem value="football">Football</SelectItem>
-                    <SelectItem value="badminton">Badminton</SelectItem>
-                    <SelectItem value="basketball">Basketball</SelectItem>
+                    <SelectItem value="snooker">Snooker Table</SelectItem>
+                    <SelectItem value="pool">8 Ball Pool</SelectItem>
+                    <SelectItem value="airhockey">Air Hockey Table</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.sportType && (
@@ -146,7 +179,7 @@ export default function BlockSlotModal({ isOpen, onClose, onSuccess }: BlockSlot
                     <SelectValue placeholder="Select time slot" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIME_SLOTS.map((slot) => (
+                    {timeSlots.map((slot) => (
                       <SelectItem key={slot.value} value={slot.value}>
                         {slot.label}
                       </SelectItem>
