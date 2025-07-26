@@ -94,10 +94,11 @@ export default function BlockDateModal({ isOpen, onClose, onSuccess }: BlockDate
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label htmlFor="date" className="text-sm font-semibold text-gray-700 mb-2 block">
-                  Date to Block *
+                  Date *
                 </Label>
                 <Input
                   {...register('date', { required: 'Date is required' })}
+                  id="date"
                   type="date"
                   min={new Date().toISOString().split('T')[0]}
                   className="h-10"
@@ -113,7 +114,8 @@ export default function BlockDateModal({ isOpen, onClose, onSuccess }: BlockDate
                 </Label>
                 <Input
                   {...register('reason')}
-                  placeholder="e.g., Holiday, Maintenance, Private Event, etc."
+                  id="reason"
+                  placeholder="e.g., Maintenance, Event, etc."
                   className="h-10"
                 />
               </div>
