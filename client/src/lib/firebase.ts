@@ -174,18 +174,20 @@ export const updateSlotPrice = async (sport: string, price: number) => {
         await setDoc(doc(db, "slotPrices", sport), { price });
         return { success: true };
       } catch (err: any) {
-        return { success: false, error: err.message };
+        console.error('Error creating slot price document:', err);
+        return { success: false, error: err.message || 'Failed to create price document' };
       }
     }
-    return { success: false, error: error.message };
+    console.error('Error updating slot price:', error);
+    return { success: false, error: error.message || 'Failed to update price' };
   }
 };
 
 export const attemptBookingWithSlotCheck = async (bookingData: any) => {
   try {
     const bookingRef = collection(db, "bookings");
-    // Check all slots in bookingData.timeSlots
     let result;
+    
     await runTransaction(db, async (transaction) => {
       // For each slot, check if it is already booked
       for (const slot of bookingData.timeSlots) {
@@ -203,6 +205,34 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
           return;
         }
       }
+      
+      // Also check for blocked slots
+      const blockedSlotsQuery = query(
+        collection(db, "blockedSlots"),
+        where("date", "==", bookingData.date),
+        where("sportType", "==", bookingData.sportType)
+      );
+      const blockedSlotsSnapshot = await getDocs(blockedSlotsQuery);
+      const blockedSlots = blockedSlotsSnapshot.docs.map(doc => doc.data().timeSlot);
+      
+      for (const slot of bookingData.timeSlots) {
+        if (blockedSlots.includes(slot)) {
+          result = { success: false, reason: "Slot is blocked" };
+          return;
+        }
+      }
+      
+      // Check for blocked dates
+      const blockedDatesQuery = query(
+        collection(db, "blockedDates"),
+        where("date", "==", bookingData.date)
+      );
+      const blockedDatesSnapshot = await getDocs(blockedDatesQuery);
+      if (!blockedDatesSnapshot.empty) {
+        result = { success: false, reason: "Date is blocked" };
+        return;
+      }
+      
       // All slots are available, create the booking
       const docRef = doc(bookingRef);
       transaction.set(docRef, {
@@ -211,9 +241,11 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
       });
       result = { success: true, id: docRef.id };
     });
+    
     return result;
   } catch (error: any) {
-    return { success: false, error: error.message };
+    console.error('Error in atomic booking creation:', error);
+    return { success: false, error: error.message || 'Booking creation failed' };
   }
 };
 
