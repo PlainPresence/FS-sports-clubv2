@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAvailableSlots } from '@/lib/firebase';
 import { TimeSlot } from '@/types';
+import { useWebSocket } from './useWebSocket';
 
 // Generate time slots based on sport type
 const generateTimeSlots = (sportType: string) => {
@@ -54,6 +55,45 @@ export const useSlots = (date: string, sportType: string) => {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // WebSocket integration for real-time updates
+  const { isConnected, subscribeToSlots, unsubscribeFromSlots } = useWebSocket({
+    onSlotUpdate: (data) => {
+      if (data.date === date && data.sportType === sportType) {
+        // Update slots with real-time data
+        setSlots(prevSlots => {
+          return prevSlots.map(slot => {
+            const updatedSlot = data.slots.find((s: any) => s.time === slot.time);
+            if (updatedSlot) {
+              return {
+                ...slot,
+                available: updatedSlot.available,
+                booked: updatedSlot.booked,
+                blocked: updatedSlot.blocked
+              };
+            }
+            return slot;
+          });
+        });
+        setLastUpdate(new Date());
+      }
+    },
+    onSlotBlocked: (data) => {
+      if (data.date === date && data.sportType === sportType) {
+        // Update blocked slots
+        setSlots(prevSlots => {
+          return prevSlots.map(slot => {
+            if (data.blockedSlots.includes(slot.time)) {
+              return { ...slot, blocked: true, available: false };
+            }
+            return slot;
+          });
+        });
+        setLastUpdate(new Date());
+      }
+    }
+  });
 
   useEffect(() => {
     if (!date || !sportType) {
@@ -68,8 +108,8 @@ export const useSlots = (date: string, sportType: string) => {
         const { bookedSlots, blockedSlots, isDateBlocked } = await getAvailableSlots(date, sportType);
         
         if (isDateBlocked) {
-          setSlots([]);
           setError('This date is completely blocked');
+          setSlots([]);
           return;
         }
 
@@ -82,19 +122,45 @@ export const useSlots = (date: string, sportType: string) => {
         }));
 
         setSlots(availableSlots);
+        setLastUpdate(new Date());
       } catch (err: any) {
-        setError(err.message);
+        setError(err.message || 'Failed to fetch slots');
       } finally {
         setLoading(false);
       }
     };
 
     fetchSlots();
-  }, [date, sportType]);
+
+    // Subscribe to real-time updates via WebSocket
+    if (isConnected) {
+      subscribeToSlots(date, sportType);
+    }
+
+    // Cleanup subscription when date or sportType changes
+    return () => {
+      if (isConnected) {
+        unsubscribeFromSlots(date, sportType);
+      }
+    };
+  }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots]);
+
+  // Subscribe to WebSocket updates when connection is established
+  useEffect(() => {
+    if (isConnected && date && sportType) {
+      subscribeToSlots(date, sportType);
+      
+      return () => {
+        unsubscribeFromSlots(date, sportType);
+      };
+    }
+  }, [isConnected, date, sportType, subscribeToSlots, unsubscribeFromSlots]);
 
   return {
     slots,
     loading,
     error,
+    lastUpdate,
+    isConnected
   };
 };
