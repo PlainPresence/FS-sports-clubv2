@@ -29,11 +29,13 @@ export interface BookingFormData {
 export interface BookingData extends BookingFormData {
   id?: string; // Firestore document id
   bookingId: string;
+  sportType: string; // Add sportType field for consistency
   amount: number;
   paymentStatus: 'pending' | 'success' | 'failed' | 'cancelled';
   paymentId?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  timeSlot?: string; // Keep for backward compatibility
   createdAt?: Date;
 }
 
