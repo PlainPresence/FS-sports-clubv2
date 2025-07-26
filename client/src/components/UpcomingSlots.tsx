@@ -18,7 +18,7 @@ export default function UpcomingSlots() {
       setLoading(true);
       try {
         const today = new Date().toISOString().split('T')[0];
-        const sports = ['cricket', 'football', 'badminton', 'basketball'];
+        const sports = ['cricket', 'snooker', 'pool', 'airhockey'];
         
         const allSlots: SlotPreview[] = [];
         
@@ -26,7 +26,14 @@ export default function UpcomingSlots() {
           const { bookedSlots, blockedSlots, isDateBlocked } = await getAvailableSlots(today, sport);
           
           if (!isDateBlocked) {
-            const timeSlots = ['06:00-07:00', '07:00-08:00', '17:00-18:00', '18:00-19:00', '19:00-20:00'];
+            let timeSlots: string[];
+            if (sport === 'airhockey') {
+              // 30-minute slots for air hockey
+              timeSlots = ['06:00-06:30', '06:30-07:00', '07:00-07:30', '07:30-08:00', '17:00-17:30', '17:30-18:00', '18:00-18:30', '18:30-19:00', '19:00-19:30', '19:30-20:00'];
+            } else {
+              // 1-hour slots for other sports
+              timeSlots = ['06:00-07:00', '07:00-08:00', '17:00-18:00', '18:00-19:00', '19:00-20:00'];
+            }
             
             timeSlots.forEach(timeSlot => {
               const isAvailable = !bookedSlots.includes(timeSlot) && !blockedSlots.includes(timeSlot);
@@ -97,11 +104,11 @@ export default function UpcomingSlots() {
 }
 
 function formatTimeLabel(timeSlot: string) {
-  // timeSlot is like '06:00-07:00'
+  // timeSlot is like '06:00-07:00' or '06:00-06:30'
   const [start] = timeSlot.split('-');
   let [hour, minute] = start.split(':').map(Number);
   const ampm = hour >= 12 ? 'PM' : 'AM';
   let displayHour = hour % 12;
   if (displayHour === 0) displayHour = 12;
-  return `${displayHour}:00 ${ampm}`;
+  return `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
 }
