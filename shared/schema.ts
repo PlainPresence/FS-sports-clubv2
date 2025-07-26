@@ -54,7 +54,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
   mobile: z.string().regex(/^\+?[1-9]\d{9,14}$/, "Invalid mobile number"),
   email: z.string().email("Invalid email").optional(),
-  sportType: z.enum(["cricket", "football", "badminton", "basketball"]),
+  sportType: z.enum(["cricket", "football", "badminton", "basketball", "airhockey", "snooker", "pool"]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
   timeSlot: z.string().min(1, "Time slot is required"),
   amount: z.number().min(1, "Amount must be greater than 0"),
