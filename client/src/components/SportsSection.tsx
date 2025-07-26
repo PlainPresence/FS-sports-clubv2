@@ -64,132 +64,132 @@ export default function SportsSection() {
   }));
 
   return (
-    <section id="sports" className="py-24 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <section id="sports" className="py-12 sm:py-24 bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
-          className="text-center mb-20"
+          className="text-center mb-12 sm:mb-20"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
-            <i className="fas fa-trophy text-2xl text-primary"></i>
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-4 sm:mb-6">
+            <i className="fas fa-trophy text-xl sm:text-2xl text-primary"></i>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Our Premium Facilities</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">Our Premium Facilities</h2>
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             Experience world-class sports facilities designed for both casual players and competitive athletes
           </p>
         </motion.div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
+          <div className="flex justify-center py-12 sm:py-16">
             <LoadingSpinner size="lg" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {mergedSports.map((sport, index) => (
               <motion.div
                 key={sport.id}
-                className="group relative bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border border-gray-100"
+                className="group relative bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 sm:hover:-translate-y-4 border border-gray-100"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ y: -8 }}
+                whileHover={{ y: -4 }}
               >
                 {/* Background gradient */}
-                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br from-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-50 to-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                <div className={`absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-50 to-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                 
                 {/* Content */}
                 <div className="relative z-10">
                   {/* Icon */}
-                  <div className={`w-20 h-20 bg-gradient-to-br from-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 to-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                    <i className={`${sport.icon} text-3xl text-white`}></i>
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 to-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <i className={`${sport.icon} text-2xl sm:text-3xl text-white`}></i>
                   </div>
                   
                   {/* Title */}
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center group-hover:text-gray-800 transition-colors">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 text-center group-hover:text-gray-800 transition-colors">
                     {sport.name}
                   </h3>
                   
                   {/* Description */}
-                  <p className="text-gray-600 mb-6 text-center leading-relaxed group-hover:text-gray-700 transition-colors">
+                  <p className="text-gray-600 mb-4 sm:mb-6 text-center leading-relaxed group-hover:text-gray-700 transition-colors text-sm sm:text-base">
                     {sport.description}
                   </p>
                   
                   {/* Price */}
-                  <div className={`text-center p-4 rounded-2xl bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-50 border border-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-100`}>
-                    <div className={`text-2xl font-bold text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color}`}>
+                  <div className={`text-center p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-50 border border-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-100`}>
+                    <div className={`text-xl sm:text-2xl font-bold text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color}`}>
                       ₹{sport.price}
                     </div>
-                    <div className={`text-sm text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color} font-medium`}>
+                    <div className={`text-xs sm:text-sm text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color} font-medium`}>
                       per {sport.id === 'airhockey' ? '30 min' : 'hour'}
                     </div>
                   </div>
                   
                   {/* Features */}
-                  <div className="mt-6 space-y-2">
+                  <div className="mt-4 sm:mt-6 space-y-1.5 sm:space-y-2">
                     {sport.id === 'cricket' && (
                       <>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>65x110 ft Premium Turf</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Professional Floodlights</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Speed Meter Available</span>
                         </div>
                       </>
                     )}
                     {sport.id === 'snooker' && (
                       <>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Professional Table</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Quality Cues & Balls</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Air Conditioned</span>
                         </div>
                       </>
                     )}
                     {sport.id === 'pool' && (
                       <>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>8 Ball Pool Table</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Professional Equipment</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Comfortable Seating</span>
                         </div>
                       </>
                     )}
                     {sport.id === 'airhockey' && (
                       <>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>Fast-Paced Action</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>30-Minute Sessions</span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-check text-green-500 mr-2"></i>
+                        <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                          <i className="fas fa-check text-green-500 mr-2 text-xs sm:text-sm"></i>
                           <span>All Ages Welcome</span>
                         </div>
                       </>
@@ -199,7 +199,7 @@ export default function SportsSection() {
                   {/* Book Now Button */}
                   <button 
                     onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-                    className={`w-full mt-6 py-3 px-4 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl`}
+                    className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 px-4 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base`}
                   >
                     <i className="fas fa-calendar-check mr-2"></i>
                     Book Now
@@ -212,20 +212,20 @@ export default function SportsSection() {
         
         {/* Call to Action */}
         <motion.div
-          className="text-center mt-20"
+          className="text-center mt-12 sm:mt-20"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <div className="bg-gradient-to-r from-primary to-secondary rounded-3xl p-12 text-white">
-            <h3 className="text-3xl font-bold mb-4">Ready to Play?</h3>
-            <p className="text-xl mb-8 opacity-90">
+          <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-white">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Ready to Play?</h3>
+            <p className="text-lg sm:text-xl mb-6 sm:mb-8 opacity-90">
               Book your preferred facility and start your game today!
             </p>
             <button 
               onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white text-primary px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              className="bg-white text-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               <i className="fas fa-calendar-check mr-2"></i>
               Book Your Slot
