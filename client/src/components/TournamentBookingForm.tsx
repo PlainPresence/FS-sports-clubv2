@@ -55,8 +55,8 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       setLoading(true);
       try {
         const tournamentData = await getTournament(tournamentId);
-        if (tournamentData) {
-          setTournament(tournamentData);
+        if (tournamentData && typeof tournamentData === 'object' && 'name' in tournamentData) {
+          setTournament(tournamentData as Tournament);
           form.setValue('tournamentId', tournamentId);
         } else {
           toast({
