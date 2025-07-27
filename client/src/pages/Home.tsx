@@ -69,7 +69,62 @@ export default function Home() {
 
               {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                {/* Left Column - Features */}
+                {/* Left Column - Founder Section */}
+                <div className="space-y-6">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-white/50">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                      <i className="fas fa-user-tie text-primary mr-3"></i>
+                      Meet Our Founder
+                    </h3>
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                      {/* Founder Photo */}
+                      <div className="flex-shrink-0">
+                        <div className="w-32 h-40 sm:w-40 sm:h-48 bg-primary rounded-2xl shadow-lg overflow-hidden">
+                          <img 
+                            src="/founder.jpg" 
+                            alt="FS Sports Club Founder" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="w-full h-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center hidden">
+                            <span className="text-white font-semibold text-lg">Photo</span>
+                          </div>
+                        </div>
+                        <p className="text-center mt-2 text-sm font-medium text-gray-700">Founder</p>
+                      </div>
+                      
+                      {/* Founder Info */}
+                      <div className="flex-1 text-center sm:text-left">
+                        <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">FS Sports Club</h4>
+                        <p className="text-gray-600 text-sm sm:text-base mb-4 leading-relaxed">
+                          Dedicated to providing world-class sports facilities and exceptional service to our community. 
+                          Our commitment to excellence ensures every player has the best experience possible.
+                        </p>
+                        <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            <i className="fas fa-star mr-1"></i>
+                            Quality Service
+                          </span>
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <i className="fas fa-clock mr-1"></i>
+                            24/7 Available
+                          </span>
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <i className="fas fa-users mr-1"></i>
+                            Community Focus
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column - Facility Features */}
                 <div className="space-y-6">
                   <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-white/50">
                     <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -119,59 +174,64 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Right Column - Amenities & Location */}
-                <div className="space-y-6">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-white/50">
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                      <i className="fas fa-concierge-bell text-primary mr-3"></i>
-                      Amenities & Services
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-restroom text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Clean Washrooms</span>
+              {/* Amenities Section - Full Width */}
+              <div className="mt-8 lg:mt-12">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-white/50">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <i className="fas fa-concierge-bell text-primary mr-3"></i>
+                    Amenities & Services
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-restroom text-primary text-sm"></i>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-parking text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Free Parking</span>
+                      <span className="text-gray-700 text-sm sm:text-base">Clean Washrooms</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-parking text-primary text-sm"></i>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-chair text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Seating Area</span>
+                      <span className="text-gray-700 text-sm sm:text-base">Free Parking</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-chair text-primary text-sm"></i>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-tint text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Drinking Water</span>
+                      <span className="text-gray-700 text-sm sm:text-base">Seating Area</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-tint text-primary text-sm"></i>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-utensils text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Canteen</span>
+                      <span className="text-gray-700 text-sm sm:text-base">Drinking Water</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-utensils text-primary text-sm"></i>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-coffee text-primary text-sm"></i>
-                        </div>
-                        <span className="text-gray-700 text-sm sm:text-base">Refreshments</span>
+                      <span className="text-gray-700 text-sm sm:text-base">Canteen</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-coffee text-primary text-sm"></i>
                       </div>
+                      <span className="text-gray-700 text-sm sm:text-base">Refreshments</span>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 sm:p-8 shadow-xl border border-primary/20">
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                      <i className="fas fa-map-marker-alt text-primary mr-3"></i>
-                      Location & Contact
-                    </h3>
+              {/* Location & Contact Section */}
+              <div className="mt-8 lg:mt-12">
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 sm:p-8 shadow-xl border border-primary/20">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                    <i className="fas fa-map-marker-alt text-primary mr-3"></i>
+                    Location & Contact
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <div className="flex items-start space-x-4">
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-1">
@@ -185,7 +245,9 @@ export default function Home() {
                           </p>
                         </div>
                       </div>
-                      
+                    </div>
+                    
+                    <div className="space-y-4">
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                           <i className="fas fa-phone text-green-600 text-lg"></i>
