@@ -8,9 +8,10 @@ import 'jspdf-autotable';
 interface ConfirmationSectionProps {
   bookingData: any;
   onBookAnother: () => void;
+  isTournament?: boolean;
 }
 
-export default function ConfirmationSection({ bookingData, onBookAnother }: ConfirmationSectionProps) {
+export default function ConfirmationSection({ bookingData, onBookAnother, isTournament = false }: ConfirmationSectionProps) {
   const handleWhatsAppShare = () => {
     openWhatsApp(bookingData);
   };
@@ -18,29 +19,44 @@ export default function ConfirmationSection({ bookingData, onBookAnother }: Conf
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('SportsTurf Pro - Booking Receipt', 14, 18);
+    doc.text('FS Sports Club - Booking Receipt', 14, 18);
     doc.setFontSize(12);
-    doc.text(`Booking ID: ${bookingData.bookingId}`, 14, 30);
-    doc.text(`Name: ${bookingData.fullName}`, 14, 38);
-    doc.text(`Mobile: ${bookingData.mobile}`, 14, 46);
-    doc.text(`Sport: ${bookingData.sportType}`, 14, 54);
-    doc.text(`Date: ${formatDate(bookingData.date)}`, 14, 62);
-    if (Array.isArray(bookingData.timeSlots)) {
-      doc.text('Time:', 14, 70);
-      bookingData.timeSlots.forEach((slot: string, idx: number) => {
-        doc.text(`- ${formatTimeSlot(slot)}`, 20, 78 + idx * 8);
-      });
+    
+    if (isTournament) {
+      doc.text(`Booking ID: ${bookingData.bookingId}`, 14, 30);
+      doc.text(`Team Name: ${bookingData.teamName}`, 14, 38);
+      doc.text(`Captain: ${bookingData.captainName}`, 14, 46);
+      doc.text(`Mobile: ${bookingData.captainMobile}`, 14, 54);
+      doc.text(`Tournament: ${bookingData.tournamentName}`, 14, 62);
+      doc.text(`Sport: ${bookingData.sportType}`, 14, 70);
+      doc.text(`Amount Paid: ₹${bookingData.amount}`, 14, 78);
+      doc.text(`Team Members: ${bookingData.teamMembers.join(', ')}`, 14, 86);
+      doc.setFontSize(10);
+      doc.text('Thank you for registering with FS Sports Club!', 14, 110);
+      doc.save(`Tournament_Booking_${bookingData.bookingId}.pdf`);
     } else {
-      doc.text(`Time: ${formatTimeSlot(bookingData.timeSlot)}`, 14, 70);
+      doc.text(`Booking ID: ${bookingData.bookingId}`, 14, 30);
+      doc.text(`Name: ${bookingData.fullName}`, 14, 38);
+      doc.text(`Mobile: ${bookingData.mobile}`, 14, 46);
+      doc.text(`Sport: ${bookingData.sportType}`, 14, 54);
+      doc.text(`Date: ${formatDate(bookingData.date)}`, 14, 62);
+      if (Array.isArray(bookingData.timeSlots)) {
+        doc.text('Time:', 14, 70);
+        bookingData.timeSlots.forEach((slot: string, idx: number) => {
+          doc.text(`- ${formatTimeSlot(slot)}`, 20, 78 + idx * 8);
+        });
+      } else {
+        doc.text(`Time: ${formatTimeSlot(bookingData.timeSlot)}`, 14, 70);
+      }
+      const timeOffset = Array.isArray(bookingData.timeSlots) ? (78 + (bookingData.timeSlots.length * 8)) : 78;
+      doc.text(`Amount Paid: ₹${bookingData.amount}`, 14, timeOffset);
+      if (bookingData.teamName) {
+        doc.text(`Team Name: ${bookingData.teamName}`, 14, 86);
+      }
+      doc.setFontSize(10);
+      doc.text('Thank you for booking with FS Sports Club!', 14, 110);
+      doc.save(`Booking_Receipt_${bookingData.bookingId}.pdf`);
     }
-    const timeOffset = Array.isArray(bookingData.timeSlots) ? (78 + (bookingData.timeSlots.length * 8)) : 78;
-    doc.text(`Amount Paid:  ${bookingData.amount}`, 14, timeOffset);
-    if (bookingData.teamName) {
-      doc.text(`Team Name: ${bookingData.teamName}`, 14, 86);
-    }
-    doc.setFontSize(10);
-    doc.text('Thank you for booking with SportsTurf Pro!', 14, 110);
-    doc.save(`Booking_Receipt_${bookingData.bookingId}.pdf`);
   };
 
   const formatDate = (dateString: string) => {
@@ -77,8 +93,12 @@ export default function ConfirmationSection({ bookingData, onBookAnother }: Conf
               transition={{ delay: 0.3, type: "spring" }}
             />
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Booking Confirmed!</h2>
-          <p className="text-xl text-gray-600">Your slot has been successfully reserved</p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            {isTournament ? 'Tournament Registration Confirmed!' : 'Booking Confirmed!'}
+          </h2>
+          <p className="text-xl text-gray-600">
+            {isTournament ? 'Your team has been successfully registered for the tournament' : 'Your slot has been successfully reserved'}
+          </p>
         </motion.div>
 
         {/* Booking Details Card */}
@@ -95,39 +115,74 @@ export default function ConfirmationSection({ bookingData, onBookAnother }: Conf
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Name</div>
-                  <div className="font-semibold">{bookingData.fullName}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Mobile</div>
-                  <div className="font-semibold">{bookingData.mobile}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Sport</div>
-                  <div className="font-semibold capitalize">{bookingData.sportType}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Date</div>
-                  <div className="font-semibold">{formatDate(bookingData.date)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Time</div>
-                  <div className="font-semibold">
-                    {Array.isArray(bookingData.timeSlots)
-                      ? bookingData.timeSlots.map((slot: string) => formatTimeSlot(slot)).join(', ')
-                      : formatTimeSlot(bookingData.timeSlot)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Amount Paid</div>
-                  <div className="font-semibold text-green-600">₹{bookingData.amount}</div>
-                </div>
-                {bookingData.teamName && (
-                  <div className="md:col-span-2">
-                    <div className="text-sm text-gray-500 mb-1">Team Name</div>
-                    <div className="font-semibold">{bookingData.teamName}</div>
-                  </div>
+                {isTournament ? (
+                  <>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Team Name</div>
+                      <div className="font-semibold">{bookingData.teamName}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Captain</div>
+                      <div className="font-semibold">{bookingData.captainName}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Mobile</div>
+                      <div className="font-semibold">{bookingData.captainMobile}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Tournament</div>
+                      <div className="font-semibold">{bookingData.tournamentName}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Sport</div>
+                      <div className="font-semibold capitalize">{bookingData.sportType}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Amount Paid</div>
+                      <div className="font-semibold text-green-600">₹{bookingData.amount}</div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="text-sm text-gray-500 mb-1">Team Members</div>
+                      <div className="font-semibold">{bookingData.teamMembers.join(', ')}</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Name</div>
+                      <div className="font-semibold">{bookingData.fullName}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Mobile</div>
+                      <div className="font-semibold">{bookingData.mobile}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Sport</div>
+                      <div className="font-semibold capitalize">{bookingData.sportType}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Date</div>
+                      <div className="font-semibold">{formatDate(bookingData.date)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Time</div>
+                      <div className="font-semibold">
+                        {Array.isArray(bookingData.timeSlots)
+                          ? bookingData.timeSlots.map((slot: string) => formatTimeSlot(slot)).join(', ')
+                          : formatTimeSlot(bookingData.timeSlot)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Amount Paid</div>
+                      <div className="font-semibold text-green-600">₹{bookingData.amount}</div>
+                    </div>
+                    {bookingData.teamName && (
+                      <div className="md:col-span-2">
+                        <div className="text-sm text-gray-500 mb-1">Team Name</div>
+                        <div className="font-semibold">{bookingData.teamName}</div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>
