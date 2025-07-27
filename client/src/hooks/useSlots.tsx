@@ -132,7 +132,7 @@ export const useSlots = (date: string, sportType: string) => {
 
     fetchSlots();
 
-    // Subscribe to real-time updates via WebSocket
+    // Subscribe to real-time updates via WebSocket only when connected
     if (isConnected) {
       subscribeToSlots(date, sportType);
     }
@@ -144,17 +144,6 @@ export const useSlots = (date: string, sportType: string) => {
       }
     };
   }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots]);
-
-  // Subscribe to WebSocket updates when connection is established
-  useEffect(() => {
-    if (isConnected && date && sportType) {
-      subscribeToSlots(date, sportType);
-      
-      return () => {
-        unsubscribeFromSlots(date, sportType);
-      };
-    }
-  }, [isConnected, date, sportType, subscribeToSlots, unsubscribeFromSlots]);
 
   return {
     slots,
