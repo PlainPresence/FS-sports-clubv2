@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getAvailableSlots } from '@/lib/firebase';
 import { TimeSlot } from '@/types';
 import { useWebSocket } from './useWebSocket';
@@ -58,41 +58,76 @@ export const useSlots = (date: string, sportType: string) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const subscriptionRef = useRef<string | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const throttleRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateTimeRef = useRef<number>(0);
+
+  // Throttled update function to prevent too frequent updates
+  const throttledUpdate = useCallback((updateFn: () => void) => {
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current > 2000) { // Only update every 2 seconds minimum
+      updateFn();
+      lastUpdateTimeRef.current = now;
+    }
+  }, []);
 
   // WebSocket integration for real-time updates
   const { isConnected, subscribeToSlots, unsubscribeFromSlots } = useWebSocket({
     onSlotUpdate: (data) => {
       if (data.date === date && data.sportType === sportType) {
-        // Update slots with real-time data
-        setSlots(prevSlots => {
-          return prevSlots.map(slot => {
-            const updatedSlot = data.slots.find((s: any) => s.time === slot.time);
-            if (updatedSlot) {
-              return {
-                ...slot,
-                available: updatedSlot.available,
-                booked: updatedSlot.booked,
-                blocked: updatedSlot.blocked
-              };
-            }
-            return slot;
+        // Throttle the update to prevent too frequent re-renders
+        throttledUpdate(() => {
+          setSlots(prevSlots => {
+            const updatedSlots = prevSlots.map(slot => {
+              const updatedSlot = data.slots.find((s: any) => s.time === slot.time);
+              if (updatedSlot) {
+                return {
+                  ...slot,
+                  available: updatedSlot.available,
+                  booked: updatedSlot.booked,
+                  blocked: updatedSlot.blocked
+                };
+              }
+              return slot;
+            });
+            
+            // Only update if there are actual changes
+            const hasChanges = updatedSlots.some((slot, index) => {
+              const prevSlot = prevSlots[index];
+              return slot.available !== prevSlot.available || 
+                     slot.booked !== prevSlot.booked || 
+                     slot.blocked !== prevSlot.blocked;
+            });
+            
+            return hasChanges ? updatedSlots : prevSlots;
           });
+          setLastUpdate(new Date());
         });
-        setLastUpdate(new Date());
       }
     },
     onSlotBlocked: (data) => {
       if (data.date === date && data.sportType === sportType) {
-        // Update blocked slots
-        setSlots(prevSlots => {
-          return prevSlots.map(slot => {
-            if (data.blockedSlots.includes(slot.time)) {
-              return { ...slot, blocked: true, available: false };
-            }
-            return slot;
+        // Throttle the update to prevent too frequent re-renders
+        throttledUpdate(() => {
+          setSlots(prevSlots => {
+            const updatedSlots = prevSlots.map(slot => {
+              if (data.blockedSlots.includes(slot.time)) {
+                return { ...slot, blocked: true, available: false };
+              }
+              return slot;
+            });
+            
+            // Only update if there are actual changes
+            const hasChanges = updatedSlots.some((slot, index) => {
+              const prevSlot = prevSlots[index];
+              return slot.available !== prevSlot.available || 
+                     slot.booked !== prevSlot.booked || 
+                     slot.blocked !== prevSlot.blocked;
+            });
+            
+            return hasChanges ? updatedSlots : prevSlots;
           });
+          setLastUpdate(new Date());
         });
-        setLastUpdate(new Date());
       }
     }
   });
@@ -154,12 +189,15 @@ export const useSlots = (date: string, sportType: string) => {
         subscribeToSlots(date, sportType);
         subscriptionRef.current = subscriptionKey;
       }
-    }, 500); // 500ms debounce
+    }, 1000); // Increased debounce to 1 second
 
     // Cleanup subscription when date or sportType changes
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
+      }
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
       }
       if (isConnected && subscriptionRef.current) {
         const [prevDate, prevSport] = subscriptionRef.current.split('-');
@@ -167,7 +205,7 @@ export const useSlots = (date: string, sportType: string) => {
         subscriptionRef.current = null;
       }
     };
-  }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots]);
+  }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots, throttledUpdate]);
 
   return {
     slots,
