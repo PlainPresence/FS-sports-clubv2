@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, setDoc, QueryDocumentSnapshot, runTransaction } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, setDoc, QueryDocumentSnapshot, runTransaction, getDoc, deleteDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -260,6 +260,168 @@ export const logFailedPayment = async (logData: any) => {
     });
     return { success: true };
   } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Tournament Management Functions
+export const getTournaments = async () => {
+  try {
+    const tournamentsRef = collection(db, "tournaments");
+    const q = query(tournamentsRef, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    const tournaments: any[] = [];
+    querySnapshot.forEach((doc) => {
+      tournaments.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+        updatedAt: doc.data().updatedAt?.toDate(),
+      });
+    });
+    
+    return tournaments;
+  } catch (error: any) {
+    console.error('Error fetching tournaments:', error);
+    return [];
+  }
+};
+
+export const getTournament = async (tournamentId: string) => {
+  try {
+    const tournamentRef = doc(db, "tournaments", tournamentId);
+    const tournamentDoc = await getDoc(tournamentRef);
+    
+    if (tournamentDoc.exists()) {
+      return {
+        id: tournamentDoc.id,
+        ...tournamentDoc.data(),
+        createdAt: tournamentDoc.data().createdAt?.toDate(),
+        updatedAt: tournamentDoc.data().updatedAt?.toDate(),
+      };
+    }
+    
+    return null;
+  } catch (error: any) {
+    console.error('Error fetching tournament:', error);
+    return null;
+  }
+};
+
+export const createTournament = async (tournamentData: any) => {
+  try {
+    const tournamentsRef = collection(db, "tournaments");
+    const docRef = await addDoc(tournamentsRef, {
+      ...tournamentData,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    
+    return { success: true, id: docRef.id };
+  } catch (error: any) {
+    console.error('Error creating tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const updateTournament = async (tournamentId: string, updates: any) => {
+  try {
+    const tournamentRef = doc(db, "tournaments", tournamentId);
+    await updateDoc(tournamentRef, {
+      ...updates,
+      updatedAt: Timestamp.now(),
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const updateTournamentSlots = async (tournamentId: string, remainingSlots: number) => {
+  try {
+    const tournamentRef = doc(db, "tournaments", tournamentId);
+    await updateDoc(tournamentRef, {
+      remainingSlots,
+      updatedAt: Timestamp.now(),
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating tournament slots:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteTournament = async (tournamentId: string) => {
+  try {
+    const tournamentRef = doc(db, "tournaments", tournamentId);
+    await deleteDoc(tournamentRef);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Tournament Booking Functions
+export const createTournamentBooking = async (bookingData: any) => {
+  try {
+    const bookingsRef = collection(db, "tournamentBookings");
+    const docRef = await addDoc(bookingsRef, {
+      ...bookingData,
+      bookingDate: Timestamp.now(),
+    });
+    
+    return { success: true, id: docRef.id };
+  } catch (error: any) {
+    console.error('Error creating tournament booking:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getTournamentBookings = async (filters?: { tournamentId?: string; status?: string }) => {
+  try {
+    const bookingsRef = collection(db, "tournamentBookings");
+    let q = query(bookingsRef, orderBy("bookingDate", "desc"));
+    
+    if (filters?.tournamentId) {
+      q = query(q, where("tournamentId", "==", filters.tournamentId));
+    }
+    
+    if (filters?.status) {
+      q = query(q, where("status", "==", filters.status));
+    }
+    
+    const querySnapshot = await getDocs(q);
+    
+    const bookings: any[] = [];
+    querySnapshot.forEach((doc) => {
+      bookings.push({
+        id: doc.id,
+        ...doc.data(),
+        bookingDate: doc.data().bookingDate?.toDate(),
+      });
+    });
+    
+    return bookings;
+  } catch (error: any) {
+    console.error('Error fetching tournament bookings:', error);
+    return [];
+  }
+};
+
+export const updateTournamentBooking = async (bookingId: string, updates: any) => {
+  try {
+    const bookingRef = doc(db, "tournamentBookings", bookingId);
+    await updateDoc(bookingRef, updates);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating tournament booking:', error);
     return { success: false, error: error.message };
   }
 };
