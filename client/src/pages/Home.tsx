@@ -8,6 +8,7 @@ import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PWAInstallSection from '@/components/PWAInstallSection';
+import founderPhoto from '@/assets/founder.jpg';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -81,7 +82,7 @@ export default function Home() {
                       <div className="flex-shrink-0">
                         <div className="w-32 h-40 sm:w-40 sm:h-48 bg-primary rounded-2xl shadow-lg overflow-hidden">
                           <img 
-                            src="/founder.jpg" 
+                            src={founderPhoto} 
                             alt="FS Sports Club Founder" 
                             className="w-full h-full object-cover"
                             onError={(e) => {
