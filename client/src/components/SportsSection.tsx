@@ -175,7 +175,7 @@ export default function SportsSection() {
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
-                          <span>Speed Meter Available</span>
+                          <span>Speed Meter Available (Extra Cost)</span>
                         </div>
                       </>
                     )}
@@ -192,7 +192,7 @@ export default function SportsSection() {
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Air Conditioned</span>
-                        </div>
+                        </di
                       </>
                     )}
                     {sport.id === 'pool' && (
@@ -234,7 +234,7 @@ export default function SportsSection() {
                     onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
                     className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 px-4 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base`}
                   >
-                    <span className="mr-2">📅</span>
+                    <span className="mr-2">📅Book Now</span>
                     Book Now
                   </button>
                 </div>
