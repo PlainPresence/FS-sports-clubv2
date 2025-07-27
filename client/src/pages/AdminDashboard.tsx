@@ -11,6 +11,9 @@ import { useAuthContext } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import BlockSlotModal from '@/components/BlockSlotModal';
 import BlockDateModal from '@/components/BlockDateModal';
+import QuickBookingModal from '@/components/QuickBookingModal';
+import TournamentCreationModal from '@/components/TournamentCreationModal';
+import QuickTeamBookingModal from '@/components/QuickTournamentBookingModal';
 import AdminTournamentManagement from '@/pages/AdminTournamentManagement';
 import { updateBooking, getSlotPrices, updateSlotPrice } from '@/lib/firebase';
 import { BookingData } from '@/types';
@@ -25,6 +28,9 @@ export default function AdminDashboard() {
   const [searchFilter, setSearchFilter] = useState('');
   const [showBlockSlotModal, setShowBlockSlotModal] = useState(false);
   const [showBlockDateModal, setShowBlockDateModal] = useState(false);
+  const [showQuickBookingModal, setShowQuickBookingModal] = useState(false);
+  const [showTournamentCreationModal, setShowTournamentCreationModal] = useState(false);
+  const [showQuickTeamBookingModal, setShowQuickTeamBookingModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -404,7 +410,31 @@ export default function AdminDashboard() {
           <Card className="shadow-lg mb-8">
             <CardContent className="p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <Button 
+                  onClick={() => setShowQuickBookingModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 h-auto font-semibold transition-colors flex items-center justify-center"
+                >
+                  <i className="fas fa-plus mr-2"></i>
+                  Quick Booking
+                </Button>
+                
+                <Button 
+                  onClick={() => setShowTournamentCreationModal(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 h-auto font-semibold transition-colors flex items-center justify-center"
+                >
+                  <i className="fas fa-trophy mr-2"></i>
+                  Create Tournament
+                </Button>
+                
+                <Button 
+                  onClick={() => setShowQuickTeamBookingModal(true)}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 h-auto font-semibold transition-colors flex items-center justify-center"
+                >
+                  <i className="fas fa-users mr-2"></i>
+                  Quick Team Booking
+                </Button>
+                
                 <Button 
                   onClick={handleBlockSlot}
                   className="bg-primary hover:bg-primary/90 text-white px-6 py-3 h-auto font-semibold transition-colors flex items-center justify-center"
@@ -662,6 +692,24 @@ export default function AdminDashboard() {
         <BlockDateModal
           isOpen={showBlockDateModal}
           onClose={() => setShowBlockDateModal(false)}
+          onSuccess={handleModalSuccess}
+        />
+
+        <QuickBookingModal
+          isOpen={showQuickBookingModal}
+          onClose={() => setShowQuickBookingModal(false)}
+          onSuccess={handleModalSuccess}
+        />
+
+        <TournamentCreationModal
+          isOpen={showTournamentCreationModal}
+          onClose={() => setShowTournamentCreationModal(false)}
+          onSuccess={handleModalSuccess}
+        />
+
+        <QuickTeamBookingModal
+          isOpen={showQuickTeamBookingModal}
+          onClose={() => setShowQuickTeamBookingModal(false)}
           onSuccess={handleModalSuccess}
         />
       </div>
