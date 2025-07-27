@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -10,7 +10,7 @@ import { getTournaments } from '@/lib/firebase';
 export default function TournamentBooking() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -29,7 +29,7 @@ export default function TournamentBooking() {
   }, []);
 
   const handleBookTournament = (tournamentId: string) => {
-    navigate(`/tournament/${tournamentId}/book`);
+    setLocation(`/tournament/${tournamentId}/book`);
   };
 
   const getStatusColor = (status: string) => {
@@ -101,7 +101,7 @@ export default function TournamentBooking() {
                   Check back later for upcoming tournaments and exciting competitions!
                 </p>
                 <button 
-                  onClick={() => navigate('/')}
+                  onClick={() => setLocation('/')}
                   className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
                 >
                   Back to Home
@@ -217,7 +217,7 @@ export default function TournamentBooking() {
               Join our tournaments and showcase your team's skills. Don't miss out on the excitement!
             </p>
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => setLocation('/')}
               className="bg-white text-primary px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               <span className="mr-2">🏠</span>
