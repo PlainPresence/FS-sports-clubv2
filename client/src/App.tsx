@@ -8,6 +8,8 @@ import ConnectionStatus from "@/components/ConnectionStatus";
 import Home from "@/pages/Home";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import TournamentBooking from "@/pages/TournamentBooking";
+import TournamentBook from "@/pages/TournamentBook";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from "react-error-boundary";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -44,6 +46,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/tournaments" component={TournamentBooking} />
+      <Route path="/tournament/:id/book" component={TournamentBook} />
       <Route path="/admin-access-sptp2024" component={AdminLogin} />
       <Route path="/adminlogin" component={AdminDashboard} />
       <Route component={NotFound} />
