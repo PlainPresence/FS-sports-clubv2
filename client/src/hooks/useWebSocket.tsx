@@ -23,7 +23,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     onSlotBlocked,
     onSystemMessage,
     autoReconnect = true,
-    reconnectInterval = 5000
+    reconnectInterval = 10000 // Increased from 5000 to 10000
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
@@ -36,7 +36,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
   const { toast } = useToast();
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
       return;
     }
 
