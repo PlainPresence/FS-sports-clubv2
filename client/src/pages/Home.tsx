@@ -8,7 +8,7 @@ import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PWAInstallSection from '@/components/PWAInstallSection';
-import founderPhoto from '@/assets/founder.jpg';
+// import founderPhoto from '@/assets/founder.jpg';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -289,39 +289,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Our Premium Facilities Section */}
-          <section className="py-16 sm:py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12 sm:mb-16">
-                {/* Logo */}
-                <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-2xl shadow-lg mb-6">
-                  <img 
-                    src="/logo.png" 
-                    alt="FS Sports Club Logo" 
-                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-primary/10 rounded-xl flex items-center justify-center hidden">
-                    <i className="fas fa-trophy text-primary text-2xl sm:text-3xl"></i>
-                  </div>
-                </div>
-                
-                {/* Main Heading */}
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                  Our Premium Facilities
-                </h2>
-                
-                {/* Description */}
-                <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                  Experience world-class sports facilities designed for both casual players and competitive athletes
-                </p>
-              </div>
-            </div>
-          </section>
+
 
           {/* Themed Sports Section */}
           <SportsSection />
