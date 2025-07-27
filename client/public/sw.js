@@ -223,7 +223,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('SportsTurf Pro', options)
+    self.registration.showNotification('FS Sports Club', options)
   );
 });
 
