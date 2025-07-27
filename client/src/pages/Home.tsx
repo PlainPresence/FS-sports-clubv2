@@ -9,6 +9,7 @@ import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PWAInstallSection from '@/components/PWAInstallSection';
 import founderPhoto from '@/assets/founder.jpg';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -292,6 +293,54 @@ export default function Home() {
           <PWAInstallSection />
           {/* Themed Upcoming Slots Section */}
           <UpcomingSlots />
+          
+          {/* Tournament Section */}
+          <section className="py-16 sm:py-20 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div 
+                className="text-center mb-12 sm:mb-16"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg mb-6">
+                  <span className="text-3xl sm:text-4xl">🏆</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                  Join Our <span className="text-purple-600">Tournaments</span>
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                  Compete with the best teams in exciting tournaments. Register your team and showcase your skills!
+                </p>
+              </motion.div>
+
+              <motion.div 
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 sm:p-12 shadow-xl border border-white/50 max-w-2xl mx-auto">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+                    Ready to Compete?
+                  </h3>
+                  <p className="text-gray-600 text-base sm:text-lg mb-8">
+                    Check out our upcoming tournaments and register your team for an exciting competition experience.
+                  </p>
+                  <button 
+                    onClick={() => window.location.href = '/tournaments'}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-8 rounded-xl text-lg sm:text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    <span className="mr-3">🏆</span>
+                    View Tournaments
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+          
           {/* Themed Booking Section */}
           <BookingSection onBookingSuccess={handleBookingSuccess} />
           {/* Themed Contact Section */}
