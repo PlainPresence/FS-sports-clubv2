@@ -7,6 +7,7 @@ import BookingSection from '@/components/BookingSection';
 import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
+import PWAInstallSection from '@/components/PWAInstallSection';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -227,6 +228,8 @@ export default function Home() {
 
           {/* Themed Sports Section */}
           <SportsSection />
+          {/* PWA Install Section */}
+          <PWAInstallSection />
           {/* Themed Upcoming Slots Section */}
           <UpcomingSlots />
           {/* Themed Booking Section */}
