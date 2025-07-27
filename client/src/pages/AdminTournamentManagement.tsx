@@ -10,7 +10,8 @@ import {
   createTournament, 
   updateTournament, 
   deleteTournament,
-  getTournamentBookings 
+  getTournamentBookings,
+  updateTournamentBooking
 } from '@/lib/firebase';
 import { Tournament, TournamentBooking } from '@/types';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -215,6 +216,23 @@ export default function AdminTournamentManagement() {
       case 'completed': return 'bg-gray-100 text-gray-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleCancelTournamentBooking = async (booking: TournamentBooking) => {
+    if (!booking.id) return;
+    const confirmed = window.confirm('Are you sure you want to cancel this tournament team booking?');
+    if (!confirmed) return;
+    try {
+      const result = await updateTournamentBooking(booking.id, { status: 'cancelled' });
+      if (result.success) {
+        toast({ title: 'Booking Cancelled', description: 'The tournament team booking has been cancelled.' });
+        fetchData(); // Refresh bookings
+      } else {
+        toast({ title: 'Error', description: result.error || 'Failed to cancel booking.', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: (error as any).message, variant: 'destructive' });
     }
   };
 
@@ -475,7 +493,7 @@ export default function AdminTournamentManagement() {
               {bookings.map((booking) => (
                 <motion.div
                   key={booking.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${booking.status === 'cancelled' ? 'bg-red-50 opacity-60' : ''}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -485,22 +503,33 @@ export default function AdminTournamentManagement() {
                       <p className="text-sm text-gray-600">Captain: {booking.captainName}</p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      booking.paymentStatus === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      booking.paymentStatus === 'success' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-700'
                     }`}>
-                      {booking.paymentStatus}
+                      {booking.status === 'cancelled' ? 'Cancelled' : booking.paymentStatus}
                     </span>
                   </div>
-                  
                   <div className="text-sm text-gray-600 mb-2">
-                                         <p>Tournament: {booking.tournamentId}</p>
-                     <p>Amount: ₹{booking.amount}</p>
-                     <p>Booking ID: {booking.id}</p>
+                    <p>Tournament: {booking.tournamentId}</p>
+                    <p>Amount: ₹{booking.amount}</p>
+                    <p>Booking ID: {booking.id}</p>
                     <p>Date: {new Date(booking.bookingDate).toLocaleDateString()}</p>
                   </div>
-                  
                   <div className="text-sm text-gray-500">
                     <p>Team Members: {booking.teamMembers.join(', ')}</p>
                   </div>
+                  {booking.status !== 'cancelled' && (
+                    <div className="flex space-x-2 mt-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleCancelTournamentBooking(booking)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                 </motion.div>
               ))}
               
