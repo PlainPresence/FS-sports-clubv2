@@ -195,8 +195,6 @@ export default function Home() {
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                         <i className="fas fa-parking text-primary text-sm"></i>
                       </div>
-                      <span className="text-gray-700 text-sm sm:text-base">Free Parking</span>
-                    </div>
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                         <i className="fas fa-chair text-primary text-sm"></i>
