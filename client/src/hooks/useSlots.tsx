@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAvailableSlots } from '@/lib/firebase';
 import { TimeSlot } from '@/types';
 import { useWebSocket } from './useWebSocket';
@@ -56,6 +56,8 @@ export const useSlots = (date: string, sportType: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const subscriptionRef = useRef<string | null>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // WebSocket integration for real-time updates
   const { isConnected, subscribeToSlots, unsubscribeFromSlots } = useWebSocket({
@@ -132,15 +134,37 @@ export const useSlots = (date: string, sportType: string) => {
 
     fetchSlots();
 
-    // Subscribe to real-time updates via WebSocket only when connected
-    if (isConnected) {
-      subscribeToSlots(date, sportType);
+    // Debounce WebSocket subscription to prevent rapid re-subscriptions
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
+
+    debounceRef.current = setTimeout(() => {
+      const subscriptionKey = `${date}-${sportType}`;
+      
+      // Only subscribe if not already subscribed to this combination
+      if (isConnected && subscriptionRef.current !== subscriptionKey) {
+        if (subscriptionRef.current) {
+          // Unsubscribe from previous
+          const [prevDate, prevSport] = subscriptionRef.current.split('-');
+          unsubscribeFromSlots(prevDate, prevSport);
+        }
+        
+        // Subscribe to new
+        subscribeToSlots(date, sportType);
+        subscriptionRef.current = subscriptionKey;
+      }
+    }, 500); // 500ms debounce
 
     // Cleanup subscription when date or sportType changes
     return () => {
-      if (isConnected) {
-        unsubscribeFromSlots(date, sportType);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      if (isConnected && subscriptionRef.current) {
+        const [prevDate, prevSport] = subscriptionRef.current.split('-');
+        unsubscribeFromSlots(prevDate, prevSport);
+        subscriptionRef.current = null;
       }
     };
   }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots]);
