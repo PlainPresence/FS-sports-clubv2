@@ -47,7 +47,7 @@ const generateTimeSlots = (sportType: string) => {
         time: `${start}-${end}`,
         display: `${format(startHour)} - ${format(endHour)}`,
       };
-    };
+    });
   }
 };
 
