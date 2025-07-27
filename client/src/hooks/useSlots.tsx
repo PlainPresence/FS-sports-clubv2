@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { getAvailableSlots } from '@/lib/firebase';
 import { TimeSlot } from '@/types';
 import { useWebSocket } from './useWebSocket';
@@ -47,7 +47,7 @@ const generateTimeSlots = (sportType: string) => {
         time: `${start}-${end}`,
         display: `${format(startHour)} - ${format(endHour)}`,
       };
-    });
+    };
   }
 };
 
@@ -58,13 +58,16 @@ export const useSlots = (date: string, sportType: string) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const subscriptionRef = useRef<string | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const throttleRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
 
-  // Throttled update function to prevent too frequent updates
+  // Memoize the subscription key to prevent unnecessary re-renders
+  const subscriptionKey = useMemo(() => `${date}-${sportType}`, [date, sportType]);
+
+  // More aggressive throttled update function
   const throttledUpdate = useCallback((updateFn: () => void) => {
     const now = Date.now();
-    if (now - lastUpdateTimeRef.current > 2000) { // Only update every 2 seconds minimum
+    if (now - lastUpdateTimeRef.current > 5000) { // Increased to 5 seconds minimum
       updateFn();
       lastUpdateTimeRef.current = now;
     }
@@ -74,7 +77,7 @@ export const useSlots = (date: string, sportType: string) => {
   const { isConnected, subscribeToSlots, unsubscribeFromSlots } = useWebSocket({
     onSlotUpdate: (data) => {
       if (data.date === date && data.sportType === sportType) {
-        // Throttle the update to prevent too frequent re-renders
+        // Only update if we have actual changes and enough time has passed
         throttledUpdate(() => {
           setSlots(prevSlots => {
             const updatedSlots = prevSlots.map(slot => {
@@ -106,7 +109,7 @@ export const useSlots = (date: string, sportType: string) => {
     },
     onSlotBlocked: (data) => {
       if (data.date === date && data.sportType === sportType) {
-        // Throttle the update to prevent too frequent re-renders
+        // Only update if we have actual changes and enough time has passed
         throttledUpdate(() => {
           setSlots(prevSlots => {
             const updatedSlots = prevSlots.map(slot => {
@@ -132,6 +135,7 @@ export const useSlots = (date: string, sportType: string) => {
     }
   });
 
+  // Initial data fetch - only run once per date/sportType combination
   useEffect(() => {
     if (!date || !sportType) {
       setSlots([]);
@@ -160,6 +164,7 @@ export const useSlots = (date: string, sportType: string) => {
 
         setSlots(availableSlots);
         setLastUpdate(new Date());
+        isInitializedRef.current = true;
       } catch (err: any) {
         setError(err.message || 'Failed to fetch slots');
       } finally {
@@ -167,16 +172,17 @@ export const useSlots = (date: string, sportType: string) => {
       }
     };
 
-    fetchSlots();
+    // Only fetch if not already initialized for this combination
+    if (!isInitializedRef.current || subscriptionRef.current !== subscriptionKey) {
+      fetchSlots();
+    }
 
-    // Debounce WebSocket subscription to prevent rapid re-subscriptions
+    // WebSocket subscription management
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
     debounceRef.current = setTimeout(() => {
-      const subscriptionKey = `${date}-${sportType}`;
-      
       // Only subscribe if not already subscribed to this combination
       if (isConnected && subscriptionRef.current !== subscriptionKey) {
         if (subscriptionRef.current) {
@@ -189,15 +195,12 @@ export const useSlots = (date: string, sportType: string) => {
         subscribeToSlots(date, sportType);
         subscriptionRef.current = subscriptionKey;
       }
-    }, 1000); // Increased debounce to 1 second
+    }, 2000); // Increased debounce to 2 seconds
 
     // Cleanup subscription when date or sportType changes
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
-      }
-      if (throttleRef.current) {
-        clearTimeout(throttleRef.current);
       }
       if (isConnected && subscriptionRef.current) {
         const [prevDate, prevSport] = subscriptionRef.current.split('-');
@@ -205,7 +208,7 @@ export const useSlots = (date: string, sportType: string) => {
         subscriptionRef.current = null;
       }
     };
-  }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots, throttledUpdate]);
+  }, [date, sportType, isConnected, subscribeToSlots, unsubscribeFromSlots, subscriptionKey]);
 
   return {
     slots,
