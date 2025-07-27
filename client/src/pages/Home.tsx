@@ -8,7 +8,7 @@ import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PWAInstallSection from '@/components/PWAInstallSection';
-// import founderPhoto from '@/assets/founder.jpg';
+import founderPhoto from '@/assets/founder.jpg';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -81,7 +81,7 @@ export default function Home() {
                       {/* Founder Photo */}
                       <div className="flex-shrink-0">
                         <div className="w-32 h-40 sm:w-40 sm:h-48 bg-primary rounded-2xl shadow-lg overflow-hidden">
-                          {/* <img 
+                          <img 
                             src={founderPhoto} 
                             alt="FS Sports Club Founder" 
                             className="w-full h-full object-cover"
@@ -91,8 +91,8 @@ export default function Home() {
                               target.style.display = 'none';
                               target.nextElementSibling?.classList.remove('hidden');
                             }}
-                          /> */}
-                          <div className="w-full h-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                          />
+                          <div className="w-full h-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center hidden">
                             <span className="text-white font-semibold text-lg">Photo</span>
                           </div>
                         </div>
