@@ -492,9 +492,9 @@ export default function AdminTournamentManagement() {
                   </div>
                   
                   <div className="text-sm text-gray-600 mb-2">
-                    <p>Tournament: {booking.tournamentName}</p>
-                    <p>Amount: ₹{booking.amount}</p>
-                    <p>Booking ID: {booking.bookingId}</p>
+                                         <p>Tournament: {booking.tournamentId}</p>
+                     <p>Amount: ₹{booking.amount}</p>
+                     <p>Booking ID: {booking.id}</p>
                     <p>Date: {new Date(booking.bookingDate).toLocaleDateString()}</p>
                   </div>
                   
