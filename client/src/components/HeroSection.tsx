@@ -71,7 +71,7 @@ export default function HeroSection({ onBookNowClick }: HeroSectionProps) {
           </h1>
           
           <p className="text-lg sm:text-xl md:text-2xl text-gray-200 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-            Experience world-class facilities for Cricket, Snooker, Pool & Air Hockey. 
+            Experience world-class facilities for Cricket, Snooker, 8 Ball Pool & Air Hockey. 
             <span className="block mt-2">Book your perfect playing time with instant confirmation and secure payments.</span>
           </p>
         </motion.div>
