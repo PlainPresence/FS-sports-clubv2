@@ -192,7 +192,7 @@ export default function SportsSection() {
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
                           <span>Air Conditioned</span>
-                        </di
+                        </div>
                       </>
                     )}
                     {sport.id === 'pool' && (
