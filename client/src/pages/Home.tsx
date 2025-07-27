@@ -169,7 +169,7 @@ export default function Home() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900 text-base sm:text-lg">Speed Meter</h4>
-                          <p className="text-gray-600 text-sm sm:text-base">Professional ball speed measurement for training and analysis</p>
+                          <p className="text-gray-600 text-sm sm:text-base">Professional ball speed measurement for training and analysis <span className="text-primary font-semibold">(Paid Add-on)</span></p>
                         </div>
                       </div>
                     </div>
@@ -184,19 +184,14 @@ export default function Home() {
                     <i className="fas fa-concierge-bell text-primary mr-3"></i>
                     Amenities & Services
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                         <i className="fas fa-restroom text-primary text-sm"></i>
                       </div>
                       <span className="text-gray-700 text-sm sm:text-base">Clean Washrooms</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <i className="fas fa-parking text-primary text-sm"></i>
-                      </div>
-                      <span className="text-gray-700 text-sm sm:text-base">Free Parking</span>
-                    </div>
+
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                         <i className="fas fa-chair text-primary text-sm"></i>
