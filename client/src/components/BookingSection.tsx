@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,7 +65,11 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   const watchedDate = form.watch('date');
   const watchedTimeSlots = form.watch('timeSlots');
   
-  const { slots, loading: slotsLoading, error: slotsError } = useSlots(watchedDate, watchedSport);
+  // Memoize the values to prevent unnecessary re-renders
+  const memoizedDate = useMemo(() => watchedDate, [watchedDate]);
+  const memoizedSport = useMemo(() => watchedSport, [watchedSport]);
+  
+  const { slots, loading: slotsLoading, error: slotsError } = useSlots(memoizedDate, memoizedSport);
 
   // Fetch prices from Firestore on mount
   useEffect(() => {
