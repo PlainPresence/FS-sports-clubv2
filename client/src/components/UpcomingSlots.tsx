@@ -33,39 +33,35 @@ export default function UpcomingSlots() {
         
         const allSlots: SlotPreview[] = [];
         
-        for (const sport of sports) {
-          const { bookedSlots, blockedSlots, isDateBlocked } = await getAvailableSlots(today, sport);
+        // Always show popular time slots with their current status
+        for (const timeSlot of popularTimeSlots) {
+          let isAvailable = false;
+          let bestSport = 'Cricket'; // Default to cricket for popular slots
           
-          if (!isDateBlocked) {
-            // Focus on popular time slots first
-            popularTimeSlots.forEach(timeSlot => {
-              const isAvailable = !bookedSlots.includes(timeSlot) && !blockedSlots.includes(timeSlot);
-              if (isAvailable && allSlots.length < 6) {
-                allSlots.push({
-                  time: formatTimeRange(timeSlot),
-                  sport: sport.charAt(0).toUpperCase() + sport.slice(1),
-                  available: true,
-                  isPopular: true,
-                });
-              }
-            });
-
-            // Add some regular slots if we have space
-            if (allSlots.length < 6) {
-              const regularTimeSlots = ['18:00-19:00', '19:00-20:00', '20:00-21:00'];
-              regularTimeSlots.forEach(timeSlot => {
-                const isAvailable = !bookedSlots.includes(timeSlot) && !blockedSlots.includes(timeSlot);
-                if (isAvailable && allSlots.length < 6) {
-                  allSlots.push({
-                    time: formatTimeRange(timeSlot),
-                    sport: sport.charAt(0).toUpperCase() + sport.slice(1),
-                    available: true,
-                    isPopular: false,
-                  });
+          // Check availability across all sports for this time slot
+          for (const sport of sports) {
+            try {
+              const { bookedSlots, blockedSlots, isDateBlocked } = await getAvailableSlots(today, sport);
+              
+              if (!isDateBlocked) {
+                const slotAvailable = !bookedSlots.includes(timeSlot) && !blockedSlots.includes(timeSlot);
+                if (slotAvailable) {
+                  isAvailable = true;
+                  bestSport = sport.charAt(0).toUpperCase() + sport.slice(1);
+                  break; // Found an available slot for this time
                 }
-              });
+              }
+            } catch (error) {
+              console.error(`Error checking ${sport} for ${timeSlot}:`, error);
             }
           }
+          
+          allSlots.push({
+            time: formatTimeRange(timeSlot),
+            sport: bestSport,
+            available: isAvailable,
+            isPopular: true,
+          });
         }
         
         setSlots(allSlots);
@@ -102,30 +98,46 @@ export default function UpcomingSlots() {
             slots.map((slot, index) => (
               <motion.div
                 key={index}
-                className={`rounded-xl p-4 text-center border-2 transition-all duration-300 cursor-pointer group ${
+                className={`rounded-xl p-4 text-center border-2 transition-all duration-300 ${
+                  slot.available 
+                    ? 'cursor-pointer group hover:border-primary hover:shadow-lg hover:shadow-primary/20' 
+                    : 'cursor-not-allowed opacity-75'
+                } ${
                   slot.isPopular 
-                    ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 hover:border-primary hover:shadow-lg hover:shadow-primary/20' 
-                    : 'bg-white border-gray-200 hover:border-primary'
+                    ? slot.available
+                      ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30' 
+                      : 'bg-gradient-to-br from-gray-100 to-gray-50 border-gray-300'
+                    : 'bg-white border-gray-200'
                 }`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
+                whileHover={slot.available ? { scale: 1.02 } : {}}
+                onClick={slot.available ? () => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' }) : undefined}
               >
-                <div className={`text-sm font-bold group-hover:text-primary ${
-                  slot.isPopular ? 'text-primary' : 'text-gray-900'
+                <div className={`text-sm font-bold ${
+                  slot.isPopular 
+                    ? slot.available ? 'text-primary' : 'text-gray-500'
+                    : 'text-gray-900'
                 }`}>
                   {slot.time}
                 </div>
                 <div className="text-xs text-gray-500 mb-1">{slot.sport}</div>
                 {slot.isPopular ? (
                   <div className="flex items-center justify-center space-x-1">
-                    <span className="text-xs text-primary font-semibold">🔥 Popular</span>
+                    {slot.available ? (
+                      <span className="text-xs text-primary font-semibold">🔥 Popular</span>
+                    ) : (
+                      <span className="text-xs text-red-500 font-semibold">❌ Booked</span>
+                    )}
                   </div>
                 ) : (
-                  <div className="text-xs text-green-600 font-semibold">Available</div>
+                  <div className={`text-xs font-semibold ${
+                    slot.available ? 'text-green-600' : 'text-red-500'
+                  }`}>
+                    {slot.available ? 'Available' : 'Booked'}
+                  </div>
                 )}
               </motion.div>
             ))
