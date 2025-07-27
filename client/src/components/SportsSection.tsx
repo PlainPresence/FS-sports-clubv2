@@ -232,10 +232,10 @@ export default function SportsSection() {
                   {/* Book Now Button */}
                   <button 
                     onClick={() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' })}
-                    className={`w-full mt-4 sm:mt-6 py-2.5 sm:py-3 px-4 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base`}
+                    className={`w-full mt-4 sm:mt-6 py-3 sm:py-4 px-6 bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-500 hover:bg-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color.split('-')[0]}-600 text-white font-bold rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-base sm:text-lg flex items-center justify-center`}
                   >
-                    <span className="mr-2">📅</span>
-                    Book Now
+                    <span className="mr-2 text-lg">📅</span>
+                    <span>Book Now</span>
                   </button>
                 </div>
               </motion.div>
