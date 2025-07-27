@@ -254,10 +254,10 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: true }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 space-y-6 lg:space-y-0"
         >
           {/* Main Booking Form */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
+          <div className="lg:col-span-2 order-1 lg:order-1">
             <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-4 sm:p-6 md:p-8 lg:p-10">
                 <div className="flex items-center mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-gray-100">
@@ -562,15 +562,18 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
           </div>
 
           {/* Pricing Summary Sidebar - Mobile Optimized */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
+          <div className="lg:col-span-1 order-2 lg:order-2">
             <div className="lg:sticky lg:top-8">
-              <Card className="shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-primary/10">
+              <Card className="shadow-lg lg:shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-primary/10">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-primary/20">
                     <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/20 rounded-full flex items-center justify-center mr-2 sm:mr-3">
                       <i className="fas fa-receipt text-primary text-sm sm:text-base"></i>
                     </div>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Booking Summary</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                      <span className="lg:hidden">📋 </span>
+                      Booking Summary
+                    </h3>
                   </div>
 
                   {selectedFacility ? (
