@@ -8,7 +8,7 @@ import ConfirmationSection from '@/components/ConfirmationSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import PWAInstallSection from '@/components/PWAInstallSection';
-// import founderPhoto from '@/assets/founder.jpg';
+import founderPhoto from '@/assets/founder.jpg';
 
 export default function Home() {
   const [showConfirmation, setShowConfirmation] = useState(false);
