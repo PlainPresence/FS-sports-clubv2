@@ -27,6 +27,31 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Reduce chunk size warnings
+    chunkSizeWarningLimit: 1000,
+    // Enable minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true,
+      },
+    },
+    // Enable source maps for debugging
+    sourcemap: false, // Set to true if you need source maps
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'framer-motion',
+      'react-hook-form',
+      '@hookform/resolvers',
+      'firebase/app',
+      'firebase/firestore',
+      'firebase/auth',
+    ],
   },
   server: {
     fs: {
