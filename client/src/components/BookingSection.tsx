@@ -87,6 +87,13 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
     fetchPrices();
   }, []);
 
+  // Reset speed meter when facility changes from cricket to something else
+  useEffect(() => {
+    if (watchedFacility !== 'cricket' && speedMeter) {
+      setSpeedMeter(false);
+    }
+  }, [watchedFacility, speedMeter]);
+
   const generateBookingId = () => {
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substr(2, 5);
@@ -111,8 +118,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
           amount = (basePrice * data.timeSlots.length);
         }
         
-        // Add speed meter cost if applicable
-        if (speedMeter && prices['speedMeter']) {
+        // Add speed meter cost if applicable (only for cricket)
+        if (data.facilityType === 'cricket' && speedMeter && prices['speedMeter']) {
           amount += prices['speedMeter'] * data.timeSlots.length;
         }
       }
@@ -122,7 +129,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         amount,
         paymentStatus: 'pending',
         speedMeter,
-        speedMeterPrice: speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
+        speedMeterPrice: data.facilityType === 'cricket' && speedMeter && prices && prices['speedMeter'] ? prices['speedMeter'] * data.timeSlots.length : 0,
         sportType: data.facilityType, // Add sportType field for consistency
         facilityType: data.facilityType,
       };
@@ -219,8 +226,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       totalAmount = (basePrice * slotCount);
     }
     
-    // Add speed meter cost if applicable
-    if (speedMeter && prices['speedMeter']) {
+    // Add speed meter cost if applicable (only for cricket)
+    if (watchedFacility === 'cricket' && speedMeter && prices['speedMeter']) {
       totalAmount += prices['speedMeter'] * slotCount;
     }
   }
@@ -526,36 +533,38 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                     )}
                   </div>
 
-                  {/* Speed Meter Add-on */}
-                  <div className="space-y-4">
-                    <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
-                        <i className="fas fa-tachometer-alt text-primary text-sm sm:text-base"></i>
+                  {/* Speed Meter Add-on - Only for Cricket */}
+                  {watchedFacility === 'cricket' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center mb-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                          <i className="fas fa-tachometer-alt text-primary text-sm sm:text-base"></i>
+                        </div>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">Cricket Add-ons</h3>
+                          <p className="text-gray-600 text-xs sm:text-sm">Enhance your cricket experience</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Add-ons</h3>
-                        <p className="text-gray-600 text-xs sm:text-sm">Enhance your experience</p>
+                      
+                      <div className="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                        <input
+                          type="checkbox"
+                          id="speedMeter"
+                          checked={speedMeter}
+                          onChange={e => setSpeedMeter(e.target.checked)}
+                          className="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-primary focus:ring-primary/20"
+                          disabled={pricesLoading || !prices || !('speedMeter' in prices)}
+                        />
+                        <Label htmlFor="speedMeter" className="text-gray-700 font-medium cursor-pointer flex-1">
+                          <div className="font-semibold text-sm sm:text-base">Speed Meter</div>
+                          <div className="text-xs sm:text-sm text-gray-600">Check ball speed during play</div>
+                        </Label>
+                        {prices && prices['speedMeter'] && (
+                          <div className="text-primary font-semibold text-sm sm:text-base">+₹{prices['speedMeter']}</div>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                      <input
-                        type="checkbox"
-                        id="speedMeter"
-                        checked={speedMeter}
-                        onChange={e => setSpeedMeter(e.target.checked)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-primary focus:ring-primary/20"
-                        disabled={pricesLoading || !prices || !('speedMeter' in prices)}
-                      />
-                      <Label htmlFor="speedMeter" className="text-gray-700 font-medium cursor-pointer flex-1">
-                        <div className="font-semibold text-sm sm:text-base">Speed Meter</div>
-                        <div className="text-xs sm:text-sm text-gray-600">Check ball speed during play</div>
-                      </Label>
-                      {prices && prices['speedMeter'] && (
-                        <div className="text-primary font-semibold text-sm sm:text-base">+₹{prices['speedMeter']}</div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </form>
               </CardContent>
             </Card>
@@ -598,7 +607,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         </span>
                       </div>
                       
-                      {speedMeter && prices && prices['speedMeter'] && (
+                      {watchedFacility === 'cricket' && speedMeter && prices && prices['speedMeter'] && (
                         <div className="flex justify-between items-center text-xs sm:text-sm">
                           <span className="text-gray-600">Speed Meter:</span>
                           <span className="font-semibold">+₹{prices['speedMeter']} x {slotCount} = ₹{prices['speedMeter'] * slotCount}</span>
