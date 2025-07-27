@@ -10,6 +10,8 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from "react-error-boundary";
+import InstallPrompt from "@/components/InstallPrompt";
+import ManualInstallButton from "@/components/ManualInstallButton";
 
 // Error Fallback Component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -56,6 +58,8 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <ConnectionStatus />
+            <InstallPrompt />
+            <ManualInstallButton />
             <Toaster />
             <Router />
           </TooltipProvider>
