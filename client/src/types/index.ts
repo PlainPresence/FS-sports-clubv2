@@ -43,3 +43,44 @@ export interface AdminUser {
   uid: string;
   email: string;
 }
+
+export interface Tournament {
+  id: string;
+  name: string;
+  description: string;
+  sportType: string;
+  teamPrice: number;
+  maxTeams: number;
+  remainingSlots: number;
+  startDate: string;
+  endDate: string;
+  registrationDeadline: string;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TournamentBooking {
+  id: string;
+  tournamentId: string;
+  teamName: string;
+  captainName: string;
+  captainMobile: string;
+  captainEmail?: string;
+  teamMembers: string[];
+  paymentStatus: 'pending' | 'success' | 'failed';
+  amount: number;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  bookingDate: Date;
+  status: 'confirmed' | 'cancelled';
+}
+
+export interface TournamentFormData {
+  teamName: string;
+  captainName: string;
+  captainMobile: string;
+  captainEmail?: string;
+  teamMembers: string[];
+  tournamentId: string;
+}
