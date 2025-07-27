@@ -11,6 +11,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import BlockSlotModal from '@/components/BlockSlotModal';
 import BlockDateModal from '@/components/BlockDateModal';
+import AdminTournamentManagement from '@/pages/AdminTournamentManagement';
 import { updateBooking, getSlotPrices, updateSlotPrice } from '@/lib/firebase';
 import { BookingData } from '@/types';
 
@@ -19,6 +20,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { logout } = useAuth();
   const { user } = useAuthContext();
+  const [activeTab, setActiveTab] = useState<'bookings' | 'tournaments'>('bookings');
   const [dateFilter, setDateFilter] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
   const [showBlockSlotModal, setShowBlockSlotModal] = useState(false);
@@ -363,7 +365,37 @@ export default function AdminDashboard() {
           </Card>
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* Tab Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-8"
+        >
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl">
+            <Button
+              onClick={() => setActiveTab('bookings')}
+              variant={activeTab === 'bookings' ? 'default' : 'ghost'}
+              className={`flex-1 ${activeTab === 'bookings' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+            >
+              <i className="fas fa-calendar-check mr-2"></i>
+              Bookings Management
+            </Button>
+            <Button
+              onClick={() => setActiveTab('tournaments')}
+              variant={activeTab === 'tournaments' ? 'default' : 'ghost'}
+              className={`flex-1 ${activeTab === 'tournaments' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
+            >
+              <i className="fas fa-trophy mr-2"></i>
+              Tournament Management
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Tab Content */}
+        {activeTab === 'bookings' && (
+          <>
+            {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -606,7 +638,18 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+          </>
+        )}
+
+        {activeTab === 'tournaments' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <AdminTournamentManagement />
+          </motion.div>
+        )}
 
         {/* Modals */}
         <BlockSlotModal
