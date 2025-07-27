@@ -97,7 +97,7 @@ export default function Home() {
                             <span className="text-white font-semibold text-lg">Photo</span>
                           </div>
                         </div>
-                        <p className="text-center mt-2 text-sm font-medium text-gray-700">Founder</p>
+                        <p className="text-center mt-2 text-sm font-medium text-gray-700">Faraz Sayyed</p>
                       </div>
                       
                       {/* Founder Info */}
