@@ -141,7 +141,16 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
                 status: 'confirmed',
               };
 
-              const bookingResult = await createTournamentBooking(finalBookingData);
+              const bookingResult = await fetch('/api/book-slot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  date: finalBookingData.tournamentId, // Use tournamentId as date for uniqueness
+                  sportType: finalBookingData.sportType || 'tournament',
+                  timeSlots: ['team'],
+                  bookingData: finalBookingData,
+                }),
+              }).then(res => res.json());
               
               if (bookingResult.success) {
                 // Update tournament remaining slots
