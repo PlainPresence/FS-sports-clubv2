@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createBooking } from '@/lib/firebase';
 import { sendBookingConfirmation } from '@/lib/emailjs';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import LoadingSpinner from './LoadingSpinner';
@@ -100,7 +99,16 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         isAdminBooking: true, // Flag to identify admin-created bookings
       };
 
-      const result = await createBooking(bookingData);
+      const result = await fetch('/api/book-slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: bookingData.date,
+          sportType: bookingData.sportType,
+          timeSlots: [bookingData.timeSlot],
+          bookingData,
+        }),
+      }).then(res => res.json());
       
       if (result.success) {
         // Send notifications
