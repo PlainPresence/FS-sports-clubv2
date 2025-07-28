@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/useSlots';
 import { initiateRazorpayPayment } from '@/lib/razorpay';
-import { createBooking, getSlotPrices, attemptBookingWithSlotCheck, logFailedPayment } from '@/lib/firebase';
+import { createBooking, getSlotPrices, logFailedPayment } from '@/lib/firebase';
 import { sendBookingConfirmation } from '@/lib/emailjs';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { BookingFormData } from '@/types';
@@ -147,7 +147,16 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                 razorpayPaymentId: paymentData.razorpay_payment_id,
                 razorpayOrderId: paymentData.razorpay_order_id,
               };
-              const bookingResult = await attemptBookingWithSlotCheck(finalBookingData);
+              const bookingResult = await fetch('/api/book-slot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  date: finalBookingData.date,
+                  sportType: finalBookingData.sportType,
+                  timeSlots: finalBookingData.timeSlots || [finalBookingData.timeSlot],
+                  bookingData: finalBookingData,
+                }),
+              }).then(res => res.json());
               if (bookingResult && bookingResult.success) {
                 if (data.email) {
                   await sendBookingConfirmation(finalBookingData);
