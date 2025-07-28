@@ -91,6 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: 'Missing required booking data.' });
     }
     try {
+      // Uniqueness check: prevent duplicate bookingId
+      const existingBooking = await firestore.collection('bookings')
+        .where('bookingId', '==', bookingData.bookingId)
+        .get();
+      if (!existingBooking.empty) {
+        return res.status(409).json({ error: 'Duplicate bookingId. This booking already exists.' });
+      }
       // 1. Check for already booked slots
       const bookingsQuery = firestore.collection('bookings')
         .where('date', '==', date)
