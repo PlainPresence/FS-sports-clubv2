@@ -120,7 +120,16 @@ export default function QuickTeamBookingModal({ isOpen, onClose, onSuccess }: Qu
         isAdminBooking: true, // Flag to identify admin-created bookings
       };
 
-      const result = await createTournamentBooking(bookingData);
+      const result = await fetch('/api/book-slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: bookingData.tournamentId, // Use tournamentId as date for uniqueness
+          sportType: bookingData.sportType || 'tournament',
+          timeSlots: ['team'],
+          bookingData,
+        }),
+      }).then(res => res.json());
       
       if (result.success) {
         // Update tournament remaining slots
