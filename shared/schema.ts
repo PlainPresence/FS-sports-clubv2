@@ -21,8 +21,6 @@ export const bookings = pgTable("bookings", {
   amount: integer("amount").notNull(),
   paymentStatus: text("payment_status").notNull().default("pending"),
   paymentId: text("payment_id"),
-  razorpayOrderId: text("razorpay_order_id"),
-  razorpayPaymentId: text("razorpay_payment_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
