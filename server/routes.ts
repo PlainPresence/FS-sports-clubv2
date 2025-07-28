@@ -105,6 +105,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint to fetch booking by cashfreeOrderId
+  app.get('/api/booking/by-cashfree-order', async (req, res) => {
+    const { orderId } = req.query;
+    if (!orderId) return res.status(400).json({ success: false, error: 'Missing orderId' });
+    try {
+      const snapshot = await firestore.collection('bookings').where('cashfreeOrderId', '==', orderId).limit(1).get();
+      if (snapshot.empty) return res.status(404).json({ success: false, error: 'Booking not found' });
+      const booking = snapshot.docs[0].data();
+      return res.json({ success: true, booking });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: 'Failed to fetch booking' });
+    }
+  });
+
   // Book slot endpoint (best practice)
   app.post('/api/book-slot', async (req, res) => {
     const wsManager = app.get('wsManager');
