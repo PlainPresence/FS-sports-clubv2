@@ -581,6 +581,9 @@ export default function AdminDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Booking ID</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Cashfree Order ID</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Cashfree Payment ID</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">CF Payment Status</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Name</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Phone</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Sport</th>
@@ -594,6 +597,9 @@ export default function AdminDashboard() {
                       {bookings.map((booking: BookingData, idx: number) => (
                         <tr key={booking.id || idx} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">{booking.bookingId}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{booking.cashfreeOrderId || '-'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{booking.cashfreePaymentId || '-'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{booking.cashfreePaymentStatus || '-'}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{booking.fullName}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{booking.mobile}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 capitalize">{booking.sportType}</td>
@@ -603,37 +609,7 @@ export default function AdminDashboard() {
                               ? booking.timeSlots.join(', ')
                               : booking.timeSlot || ''
                           }</td>
-                          <td className="px-6 py-4 text-sm font-medium text-green-600">
-                            {editingId === booking.id ? (
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={editingAmount ?? ''}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingAmount(Number(e.target.value) || 0)}
-                                  className="border rounded px-2 py-1 w-20"
-                                  disabled={saving}
-                                />
-                                <Button size="sm" onClick={() => handleEditSave(booking)} disabled={saving}>
-                                  Save
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={handleEditCancel} disabled={saving}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                ₹{booking.amount || 0}
-                                <button
-                                  className="text-blue-500 hover:text-blue-700 focus:outline-none"
-                                  onClick={() => handleEditClick(booking)}
-                                  title="Edit Price"
-                                >
-                                  <i className="fas fa-edit"></i>
-                                </button>
-                              </div>
-                            )}
-                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">₹{booking.amount}</td>
                           <td className="px-6 py-4">
                             <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
                               booking.paymentStatus === 'success' 
