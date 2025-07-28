@@ -101,7 +101,7 @@ export default function HeroSection({ onBookNowClick }: HeroSectionProps) {
               <i className="fas fa-shield-alt text-white text-xl"></i>
             </div>
             <h3 className="text-lg font-bold text-white mb-2">Secure Payments</h3>
-            <p className="text-gray-300 text-sm leading-relaxed">Safe & secure online payments with Razorpay integration</p>
+            <p className="text-gray-300 text-sm leading-relaxed">Safe & secure online payments with Cashfree integration</p>
           </motion.div>
 
           <motion.div 
