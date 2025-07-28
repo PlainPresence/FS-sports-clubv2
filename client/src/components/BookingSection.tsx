@@ -18,6 +18,7 @@ import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { BookingFormData } from '@/types';
 import Shimmer from './Shimmer';
 import LoadingSpinner from './LoadingSpinner';
+import { v4 as uuidv4 } from 'uuid';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -95,9 +96,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   }, [watchedFacility, speedMeter]);
 
   const generateBookingId = () => {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substr(2, 5);
-    return `SPT${timestamp}${randomStr}`.toUpperCase();
+    return `SPT${uuidv4().replace(/-/g, '').toUpperCase()}`;
   };
 
   const onSubmit = async (data: any) => {
