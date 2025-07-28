@@ -70,7 +70,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TODO: Add Cashfree webhook endpoint for payment status updates
+  // Cashfree webhook endpoint for payment status updates
+  app.post('/api/cashfree/webhook', async (req, res) => {
+    try {
+      // Cashfree sends JSON payload with payment status and order/payment IDs
+      const event = req.body;
+      // You may want to verify the webhook signature here for security (see Cashfree docs)
+      if (event.event && event.event === 'PAYMENT_SUCCESS') {
+        const payment = event.data && event.data.payment;
+        const order = event.data && event.data.order;
+        if (!payment || !order) return res.status(400).json({ error: 'Invalid webhook payload' });
+        // Check if booking already exists for this orderId
+        const existing = await firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id).get();
+        if (!existing.empty) return res.status(200).json({ message: 'Booking already exists' });
+        // Create booking in Firestore
+        await firestore.collection('bookings').add({
+          cashfreeOrderId: order.order_id,
+          cashfreePaymentId: payment.payment_id,
+          cashfreePaymentStatus: payment.payment_status,
+          fullName: order.customer_details.customer_name,
+          mobile: order.customer_details.customer_phone,
+          email: order.customer_details.customer_email,
+          amount: order.order_amount,
+          paymentStatus: 'success',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          // Add any other fields you need (e.g., slot info, sportType, etc.)
+        });
+        return res.status(200).json({ message: 'Booking created' });
+      }
+      return res.status(200).json({ message: 'Event ignored' });
+    } catch (error) {
+      console.error('Cashfree webhook error:', error);
+      return res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
 
   // Book slot endpoint (best practice)
   app.post('/api/book-slot', async (req, res) => {
