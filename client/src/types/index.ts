@@ -35,6 +35,9 @@ export interface BookingData extends BookingFormData {
   paymentId?: string;
   timeSlot?: string; // Keep for backward compatibility
   createdAt?: Date;
+  cashfreeOrderId?: string;
+  cashfreePaymentId?: string;
+  cashfreePaymentStatus?: string;
 }
 
 export interface AdminUser {
