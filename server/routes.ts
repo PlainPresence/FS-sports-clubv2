@@ -128,20 +128,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!blockedDatesSnapshot.empty) {
         return res.status(409).json({ error: 'This date is completely blocked.' });
       }
-      // 4. Create booking for each slot
-      const batch = firestore.batch();
-      for (const slot of timeSlots) {
-        const bookingRef = firestore.collection('bookings').doc();
-        batch.set(bookingRef, {
-          ...bookingData,
-          timeSlot: slot,
-          sportType,
-          date,
-          paymentStatus: 'success',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-      await batch.commit();
+      // 4. Create a single booking document for all slots
+      const bookingRef = firestore.collection('bookings').doc();
+      await bookingRef.set({
+        ...bookingData,
+        timeSlots, // store the array of slots
+        sportType,
+        date,
+        paymentStatus: 'success',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
       // 5. Broadcast slot update
       if (wsManager && wsManager.sendSlotUpdate) {
         // Fetch updated slots for this date/sportType
