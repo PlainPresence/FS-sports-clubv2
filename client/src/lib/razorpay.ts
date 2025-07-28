@@ -81,17 +81,50 @@ export const initiateRazorpayPayment = async (options: {
       }
     }
 
+    // 1. Create order from backend
+    const orderRes = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amount * 100, // paise
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`,
+      }),
+    });
+    const order = await orderRes.json();
+    if (!order.id) {
+      onFailure({ error: 'Failed to create payment order.' });
+      return;
+    }
+
     const razorpayOptions: RazorpayOptions = {
       key: razorpayKey,
-      amount: amount * 100, // Convert to paise
-      currency: 'INR',
+      amount: order.amount,
+      currency: order.currency,
       name: 'SportsTurf Pro',
       description: `${bookingData.sportType} booking for ${bookingData.date}`,
-      handler: (response: any) => {
-        onSuccess({
-          ...response,
-          bookingData,
-        });
+      order_id: order.id,
+      handler: async (response: any) => {
+        // 2. Verify payment with backend
+        try {
+          const verifyRes = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            onSuccess({ ...response, bookingData });
+          } else {
+            onFailure({ error: 'Payment verification failed.' });
+          }
+        } catch (err) {
+          onFailure({ error: 'Payment verification error.' });
+        }
       },
       prefill: {
         name: bookingData.fullName,
