@@ -11,7 +11,6 @@ import { RadioGroup } from '@/components/ui/radio-group';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/useSlots';
-import { initiateRazorpayPayment } from '@/lib/razorpay';
 import { createBooking, getSlotPrices, logFailedPayment } from '@/lib/firebase';
 import { sendBookingConfirmation } from '@/lib/emailjs';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
@@ -19,6 +18,7 @@ import { BookingFormData } from '@/types';
 import Shimmer from './Shimmer';
 import LoadingSpinner from './LoadingSpinner';
 import { v4 as uuidv4 } from 'uuid';
+import { initiateCashfreePayment } from '@/lib/cashfree';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -132,89 +132,55 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         sportType: data.facilityType, // Add sportType field for consistency
         facilityType: data.facilityType,
       };
-      // Initiate Razorpay payment
-      await new Promise((resolve, reject) => {
-        initiateRazorpayPayment({
+      // 1. Create Cashfree payment session
+      const sessionRes = await fetch('/api/cashfree/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: bookingId,
           amount,
-          bookingData,
-          onSuccess: async (paymentData) => {
-            try {
-              // Atomic slot check and booking creation
-              const finalBookingData = {
-                ...bookingData,
-                paymentStatus: 'success',
-                razorpayPaymentId: paymentData.razorpay_payment_id,
-                razorpayOrderId: paymentData.razorpay_order_id,
-              };
-              const bookingResult = await fetch('/api/book-slot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  date: finalBookingData.date,
-                  sportType: finalBookingData.sportType,
-                  timeSlots: finalBookingData.timeSlots || [finalBookingData.timeSlot],
-                  bookingData: finalBookingData,
-                }),
-              }).then(res => res.json());
-              if (bookingResult && bookingResult.success) {
-                if (data.email) {
-                  await sendBookingConfirmation(finalBookingData);
-                }
-                sendWhatsAppNotification(finalBookingData);
-                toast({
-                  title: 'Booking Confirmed!',
-                  description: 'Your slot has been booked. WhatsApp confirmation sent to customer.',
-                });
-                onBookingSuccess(finalBookingData);
-                form.reset();
-                resolve(paymentData);
-              } else if (bookingResult && 'reason' in bookingResult && bookingResult.reason === 'Slot already booked') {
-                await logFailedPayment({
-                  ...finalBookingData,
-                  reason: 'Slot already booked',
-                  needsRefund: true,
-                });
-                toast({
-                  title: 'Slot Unavailable',
-                  description: `Payment received (ID: ${paymentData.razorpay_payment_id}), but one or more slots were just booked by someone else. Please contact support for a refund.`,
-                  variant: 'destructive',
-                });
-                reject(new Error('Slot already booked'));
-              } else {
-                await logFailedPayment({
-                  ...finalBookingData,
-                  reason: bookingResult?.error || 'Unknown error',
-                  needsRefund: true,
-                });
-                toast({
-                  title: 'Booking Failed',
-                  description: `Payment received (ID: ${paymentData.razorpay_payment_id}), but booking could not be completed. Please contact support for a refund.`,
-                  variant: 'destructive',
-                });
-                reject(new Error('Booking failed after payment'));
-              }
-            } catch (error) {
-              toast({
-                title: 'Error',
-                description: 'Payment successful but booking failed. Please contact support.',
-                variant: 'destructive',
-              });
-              reject(error);
-            }
+          customerDetails: {
+            customer_id: bookingId,
+            customer_email: data.email,
+            customer_phone: data.mobile,
+            customer_name: data.fullName,
           },
-          onFailure: (error) => {
-            toast({
-              title: 'Payment Failed',
-              description: error.error || 'Payment was unsuccessful. Please try again.',
-              variant: 'destructive',
-            });
-            reject(error);
-          },
-        });
+        }),
       });
+      const sessionData = await sessionRes.json();
+      if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
+      // 2. Launch Cashfree payment UI
+      await initiateCashfreePayment(sessionData.paymentSessionId);
+      // 3. TODO: After payment success, confirm and create booking (should use webhook or redirect confirmation)
+      // For now, simulate booking creation after payment UI
+      const bookingResult = await createBooking(bookingData);
+      if (bookingResult && bookingResult.success) {
+        if (data.email) {
+          await sendBookingConfirmation(bookingData);
+        }
+        sendWhatsAppNotification(bookingData);
+        toast({
+          title: 'Booking Confirmed!',
+          description: 'Your slot has been booked. WhatsApp confirmation sent to customer.',
+        });
+        onBookingSuccess(bookingData);
+        form.reset();
+        setIsProcessing(false);
+      } else {
+        toast({
+          title: 'Booking Failed',
+          description: 'Booking could not be completed. Please contact support.',
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+      }
     } catch (error) {
       console.error('Booking error:', error);
-    } finally {
+      toast({
+        title: 'Error',
+        description: 'Booking failed. Please try again.',
+        variant: 'destructive',
+      });
       setIsProcessing(false);
     }
   };
