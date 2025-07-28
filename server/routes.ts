@@ -14,8 +14,12 @@ const razorpay = new Razorpay({
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set.');
+  }
   admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
+    credential: admin.credential.cert(JSON.parse(serviceAccountJson)),
   });
 }
 const firestore = admin.firestore();
