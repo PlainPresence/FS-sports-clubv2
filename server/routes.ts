@@ -2,15 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import WebSocketManager from "./websocket";
-import Razorpay from "razorpay";
 import crypto from "crypto";
 // @ts-ignore: No type declarations for firebase-admin in this environment
 import admin from 'firebase-admin';
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_SECRET_KEY!,
-});
+import axios from 'axios';
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -49,34 +44,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add WebSocket manager to app for use in other parts
   app.set('wsManager', wsManager);
 
-  // Create Razorpay order
-  app.post('/api/create-order', async (req, res) => {
-    const { amount, currency = "INR", receipt } = req.body;
+  // Cashfree: Create payment session endpoint
+  app.post('/api/cashfree/create-session', async (req, res) => {
+    const { orderId, amount, customerDetails } = req.body;
     try {
-      const order = await razorpay.orders.create({
-        amount, // amount in paise
-        currency,
-        receipt,
-        payment_capture: 1,
-      });
-      res.json(order);
-    } catch (err) {
-      res.status(500).json({ error: "Order creation failed", details: err });
+      const response = await axios.post(
+        'https://sandbox.cashfree.com/pg/orders',
+        {
+          order_id: orderId,
+          order_amount: amount,
+          order_currency: 'INR',
+          customer_details: customerDetails,
+        },
+        {
+          headers: {
+            'x-client-id': process.env.CASHFREE_CLIENT_ID,
+            'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      res.json({ paymentSessionId: response.data.payment_session_id });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create Cashfree session', details: error.message });
     }
   });
 
-  // Verify Razorpay payment signature
-  app.post('/api/verify-payment', (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_SECRET_KEY!);
-    hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
-    const generated_signature = hmac.digest('hex');
-    if (generated_signature === razorpay_signature) {
-      res.json({ success: true });
-    } else {
-      res.status(400).json({ success: false, error: 'Invalid signature' });
-    }
-  });
+  // TODO: Add Cashfree webhook endpoint for payment status updates
 
   // Book slot endpoint (best practice)
   app.post('/api/book-slot', async (req, res) => {
