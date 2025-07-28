@@ -33,8 +33,6 @@ export interface BookingData extends BookingFormData {
   amount: number;
   paymentStatus: 'pending' | 'success' | 'failed' | 'cancelled';
   paymentId?: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
   timeSlot?: string; // Keep for backward compatibility
   createdAt?: Date;
 }
@@ -70,8 +68,6 @@ export interface TournamentBooking {
   teamMembers: string[];
   paymentStatus: 'pending' | 'success' | 'failed';
   amount: number;
-  razorpayPaymentId?: string;
-  razorpayOrderId?: string;
   bookingDate: Date;
   status: 'confirmed' | 'cancelled';
 }
