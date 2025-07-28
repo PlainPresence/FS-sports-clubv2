@@ -101,7 +101,7 @@ export const initiateRazorpayPayment = async (options: {
       key: razorpayKey,
       amount: order.amount,
       currency: order.currency,
-      name: 'SportsTurf Pro',
+      name: 'FS Sports Club',
       description: `${bookingData.sportType} booking for ${bookingData.date}`,
       order_id: order.id,
       handler: async (response: any) => {
