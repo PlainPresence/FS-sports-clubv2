@@ -21,6 +21,9 @@ export const bookings = pgTable("bookings", {
   amount: integer("amount").notNull(),
   paymentStatus: text("payment_status").notNull().default("pending"),
   paymentId: text("payment_id"),
+  cashfreeOrderId: text("cashfree_order_id"),
+  cashfreePaymentId: text("cashfree_payment_id"),
+  cashfreePaymentStatus: text("cashfree_payment_status"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
