@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCashfree } from '@/lib/cashfree';
+import { initiateCashfreePayment } from '@/lib/cashfree';
 import { getTournament, createTournamentBooking, updateTournamentSlots } from '@/lib/firebase';
 import { sendBookingConfirmation } from '@/lib/emailjs';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
