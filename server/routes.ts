@@ -8,6 +8,51 @@ import admin from 'firebase-admin';
 import axios from 'axios';
 import type { Request, Response } from 'express';
 
+// Export the webhook handler for use in index.ts
+export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
+  try {
+    // Use the raw body (Buffer) for signature verification
+    const signature = req.headers['x-webhook-signature'];
+    const secret = process.env.CASHFREE_WEBHOOK_SECRET;
+    const payload = req.body as Buffer; // Buffer
+    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
+    if (signature !== expectedSignature) {
+      console.error('Invalid Cashfree webhook signature');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    // Parse the raw body as JSON for business logic
+    const event = JSON.parse(payload.toString('utf8'));
+    if (event.event && event.event === 'PAYMENT_SUCCESS') {
+      const payment = event.data && event.data.payment;
+      const order = event.data && event.data.order;
+      if (!payment || !order) {
+        console.error('Invalid webhook payload', event);
+        return res.status(400).json({ error: 'Invalid webhook payload' });
+      }
+      // Check if booking already exists for this orderId
+      const existing = await firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id).get();
+      if (!existing.empty) return res.status(200).json({ message: 'Booking already exists' });
+      // Create booking in Firestore
+      await firestore.collection('bookings').add({
+        cashfreeOrderId: order.order_id,
+        cashfreePaymentId: payment.payment_id,
+        cashfreePaymentStatus: payment.payment_status,
+        fullName: order.customer_details.customer_name,
+        mobile: order.customer_details.customer_phone,
+        email: order.customer_details.customer_email,
+        amount: order.order_amount,
+        paymentStatus: 'success',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return res.status(200).json({ message: 'Booking created' });
+    }
+    return res.status(200).json({ message: 'Event ignored' });
+  } catch (error) {
+    console.error('Cashfree webhook error:', error, req.body);
+    return res.status(500).json({ error: 'Webhook processing failed' });
+  }
+};
+
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -72,51 +117,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to create Cashfree session', details: error?.response?.data || error.message });
     }
   });
-
-  // Export the webhook handler for use in index.ts
-  export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
-    try {
-      // Use the raw body (Buffer) for signature verification
-      const signature = req.headers['x-webhook-signature'];
-      const secret = process.env.CASHFREE_WEBHOOK_SECRET;
-      const payload = req.body as Buffer; // Buffer
-      const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
-      if (signature !== expectedSignature) {
-        console.error('Invalid Cashfree webhook signature');
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
-      // Parse the raw body as JSON for business logic
-      const event = JSON.parse(payload.toString('utf8'));
-      if (event.event && event.event === 'PAYMENT_SUCCESS') {
-        const payment = event.data && event.data.payment;
-        const order = event.data && event.data.order;
-        if (!payment || !order) {
-          console.error('Invalid webhook payload', event);
-          return res.status(400).json({ error: 'Invalid webhook payload' });
-        }
-        // Check if booking already exists for this orderId
-        const existing = await firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id).get();
-        if (!existing.empty) return res.status(200).json({ message: 'Booking already exists' });
-        // Create booking in Firestore
-        await firestore.collection('bookings').add({
-          cashfreeOrderId: order.order_id,
-          cashfreePaymentId: payment.payment_id,
-          cashfreePaymentStatus: payment.payment_status,
-          fullName: order.customer_details.customer_name,
-          mobile: order.customer_details.customer_phone,
-          email: order.customer_details.customer_email,
-          amount: order.order_amount,
-          paymentStatus: 'success',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        return res.status(200).json({ message: 'Booking created' });
-      }
-      return res.status(200).json({ message: 'Event ignored' });
-    } catch (error) {
-      console.error('Cashfree webhook error:', error, req.body);
-      return res.status(500).json({ error: 'Webhook processing failed' });
-    }
-  };
 
   // API endpoint to fetch booking by cashfreeOrderId
   app.get('/api/booking/by-cashfree-order', async (req, res) => {
