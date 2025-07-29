@@ -61,6 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'x-client-id': process.env.CASHFREE_CLIENT_ID,
             'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
             'Content-Type': 'application/json',
+            'x-api-version': '2025-01-01', // <-- REQUIRED for Cashfree 2025
           },
         }
       );
