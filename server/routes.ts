@@ -6,6 +6,7 @@ import crypto from "crypto";
 // @ts-ignore: No type declarations for firebase-admin in this environment
 import admin from 'firebase-admin';
 import axios from 'axios';
+import type { Request, Response } from 'express';
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -61,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'x-client-id': process.env.CASHFREE_CLIENT_ID,
             'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
             'Content-Type': 'application/json',
-            'x-api-version': '2025-01-01', // <-- REQUIRED for Cashfree 2025
+            'x-api-version': '2025-01-01', // Required for Cashfree 2025
           },
         }
       );
@@ -72,20 +73,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cashfree webhook endpoint for payment status updates
-  app.post('/api/cashfree/webhook', async (req, res) => {
+  // Export the webhook handler for use in index.ts
+  export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
     try {
-      // Verify webhook signature
+      // Use the raw body (Buffer) for signature verification
       const signature = req.headers['x-webhook-signature'];
       const secret = process.env.CASHFREE_WEBHOOK_SECRET;
-      const payload = JSON.stringify(req.body);
+      const payload = req.body as Buffer; // Buffer
       const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
       if (signature !== expectedSignature) {
         console.error('Invalid Cashfree webhook signature');
         return res.status(401).json({ error: 'Invalid signature' });
       }
-      // Cashfree sends JSON payload with payment status and order/payment IDs
-      const event = req.body;
+      // Parse the raw body as JSON for business logic
+      const event = JSON.parse(payload.toString('utf8'));
       if (event.event && event.event === 'PAYMENT_SUCCESS') {
         const payment = event.data && event.data.payment;
         const order = event.data && event.data.order;
@@ -115,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Cashfree webhook error:', error, req.body);
       return res.status(500).json({ error: 'Webhook processing failed' });
     }
-  });
+  };
 
   // API endpoint to fetch booking by cashfreeOrderId
   app.get('/api/booking/by-cashfree-order', async (req, res) => {
