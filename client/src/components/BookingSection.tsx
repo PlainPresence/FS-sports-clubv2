@@ -134,9 +134,9 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       };
       // 1. Create Cashfree payment session
       const sessionRes = await fetch('/api/cashfree/create-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
           orderId: bookingId,
           amount,
           customerDetails: {
@@ -151,29 +151,9 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
       // 2. Launch Cashfree payment UI
       await initiateCashfreePayment(sessionData.paymentSessionId);
-      // 3. TODO: After payment success, confirm and create booking (should use webhook or redirect confirmation)
-      // For now, simulate booking creation after payment UI
-      const bookingResult = await createBooking(bookingData);
-      if (bookingResult && bookingResult.success) {
-        if (data.email) {
-          await sendBookingConfirmation(bookingData);
-        }
-        sendWhatsAppNotification(bookingData);
-        toast({
-          title: 'Booking Confirmed!',
-          description: 'Your slot has been booked. WhatsApp confirmation sent to customer.',
-        });
-        onBookingSuccess(bookingData);
-        form.reset();
-        setIsProcessing(false);
-      } else {
-        toast({
-          title: 'Booking Failed',
-          description: 'Booking could not be completed. Please contact support.',
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
-      }
+      // After payment, redirect to confirmation page with order_id
+      window.location.href = `/payment-confirmation?order_id=${bookingId}`;
+      // Do NOT create the booking here! The webhook will handle it.
     } catch (error) {
       console.error('Booking error:', error);
       toast({
