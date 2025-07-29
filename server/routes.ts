@@ -66,7 +66,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json({ paymentSessionId: response.data.payment_session_id });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create Cashfree session', details: error.message });
+      console.error('Cashfree session creation error:', error?.response?.data || error.message, error);
+      res.status(500).json({ error: 'Failed to create Cashfree session', details: error?.response?.data || error.message });
     }
   });
 
@@ -105,7 +106,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: order.order_amount,
           paymentStatus: 'success',
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          // Add any other fields you need (e.g., slot info, sportType, etc.)
         });
         return res.status(200).json({ message: 'Booking created' });
       }
