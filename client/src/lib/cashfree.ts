@@ -1,27 +1,24 @@
-// Add this at the top of the file or in a separate .d.ts file if needed
-// declare module '@cashfreepayments/cashfree-js';
-import { useRef, useEffect } from 'react';
-import { load } from '@cashfreepayments/cashfree-js';
-
-export function useCashfree() {
-  const cashfreeRef = useRef<any>(null);
-
-  useEffect(() => {
-    const initializeSDK = async () => {
-      cashfreeRef.current = await load({ mode: 'sandbox' });
-    };
-    initializeSDK();
-  }, []);
-
-  const initiateCashfreePayment = async (paymentSessionId: string) => {
-    if (!cashfreeRef.current) {
-      throw new Error('Cashfree SDK not loaded yet!');
+export const loadCashfree = (): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    if (window.Cashfree) {
+      resolve(true);
+      return;
     }
-    cashfreeRef.current.checkout({
-      paymentSessionId,
-      redirectTarget: '_self',
-    });
-  };
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(false);
+    document.body.appendChild(script);
+  });
+};
 
-  return initiateCashfreePayment;
-} 
+export const initiateCashfreePayment = async (paymentSessionId: string) => {
+  await loadCashfree();
+  if (!window.Cashfree) throw new Error('Cashfree SDK not loaded');
+  const cashfree = new window.Cashfree({ mode: 'sandbox' });
+  cashfree.checkout({
+    paymentSessionId,
+    redirectTarget: '_self',
+  });
+}; 
