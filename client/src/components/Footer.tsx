@@ -57,7 +57,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center space-x-3">
                 <i className="fas fa-envelope text-primary"></i>
-                <span className="text-gray-400">bookings@sportsturfpro.com</span>
+                <span className="text-gray-400">fssportsclub7@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -67,6 +67,10 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
               © 2025 FS Sports Club. All rights reserved. Powered with Firebase & Cashfree.
+              <span className="mx-2">|</span>
+              <a href="/refundpolicy" className="text-blue-400 hover:underline">Refund Policy</a>
+              <span className="mx-2">|</span>
+              <a href="/tnc" className="text-blue-400 hover:underline">Terms & Conditions</a>
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
               <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
