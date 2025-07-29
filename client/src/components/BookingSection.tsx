@@ -18,7 +18,7 @@ import { BookingFormData } from '@/types';
 import Shimmer from './Shimmer';
 import LoadingSpinner from './LoadingSpinner';
 import { v4 as uuidv4 } from 'uuid';
-import { initiateCashfreePayment } from '@/lib/cashfree';
+import { useCashfree } from '@/lib/cashfree';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -98,6 +98,8 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   const generateBookingId = () => {
     return `SPT${uuidv4().replace(/-/g, '').toUpperCase()}`;
   };
+
+  const initiateCashfreePayment = useCashfree();
 
   const onSubmit = async (data: any) => {
     setIsProcessing(true);
