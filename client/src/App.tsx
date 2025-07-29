@@ -14,6 +14,8 @@ import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from "react-error-boundary";
 import InstallPrompt from "@/components/InstallPrompt";
 import ManualInstallButton from "@/components/ManualInstallButton";
+import RefundPolicy from '@/pages/RefundPolicy';
+import Tnc from '@/pages/Tnc';
 
 // Error Fallback Component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -50,6 +52,8 @@ function Router() {
       <Route path="/tournament/:id/book" component={TournamentBook} />
       <Route path="/admin-access-sptp2024" component={AdminLogin} />
       <Route path="/adminlogin" component={AdminDashboard} />
+      <Route path="/refundpolicy" component={RefundPolicy} />
+      <Route path="/tnc" component={Tnc} />
       <Route component={NotFound} />
     </Switch>
   );
