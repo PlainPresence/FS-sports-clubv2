@@ -1,8 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes, cashfreeWebhookHandler } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Register the Cashfree webhook route with raw body parser BEFORE express.json()
+app.post('/api/cashfree/webhook', express.raw({ type: 'application/json' }), cashfreeWebhookHandler);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
