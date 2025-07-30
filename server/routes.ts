@@ -65,6 +65,11 @@ if (!admin.apps.length) {
 }
 const firestore = admin.firestore();
 
+// Cashfree API URL selection based on environment
+const cashfreeApiUrl = process.env.NODE_ENV === 'production'
+  ? 'https://api.cashfree.com/pg/orders'
+  : 'https://sandbox.cashfree.com/pg/orders';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
   // prefix all routes with /api
@@ -93,9 +98,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cashfree: Create payment session endpoint
   app.post('/api/cashfree/create-session', async (req, res) => {
     const { orderId, amount, customerDetails } = req.body;
+    // Check for required env variables
+    if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
+      return res.status(500).json({ error: 'Cashfree credentials not set in environment.' });
+    }
     try {
       const response = await axios.post(
-        'https://sandbox.cashfree.com/pg/orders',
+        cashfreeApiUrl,
         {
           order_id: orderId,
           order_amount: amount,
