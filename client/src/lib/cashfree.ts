@@ -16,7 +16,11 @@ export const loadCashfree = (): Promise<boolean> => {
 export const initiateCashfreePayment = async (paymentSessionId: string) => {
   await loadCashfree();
   if (!window.Cashfree) throw new Error('Cashfree SDK not loaded');
-  const cashfree = new window.Cashfree({ mode: 'sandbox' });
+  
+  // Use production mode in production environment
+  const mode = import.meta.env.PROD ? 'production' : 'sandbox';
+  const cashfree = new window.Cashfree({ mode });
+  
   cashfree.checkout({
     paymentSessionId,
     redirectTarget: '_self',
