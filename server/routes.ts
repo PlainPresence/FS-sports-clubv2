@@ -13,15 +13,35 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
   try {
     // Use the raw body (Buffer) for signature verification
     const signature = req.headers['x-webhook-signature'];
-    const secret = process.env.CASHFREE_WEBHOOK_SECRET;
+    const timestamp = req.headers['x-webhook-timestamp'];
+    const clientSecret = process.env.CASHFREE_CLIENT_SECRET; // Use client secret, not webhook secret
     const payload = req.body as Buffer; // Buffer
-    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64');
+    
+    // Check if client secret is configured
+    if (!clientSecret) {
+      console.error('CASHFREE_CLIENT_SECRET not configured');
+      return res.status(500).json({ error: 'Client secret not configured' });
+    }
+    
+    // Check if required headers are present
+    if (!signature || !timestamp) {
+      console.error('Missing webhook headers: signature or timestamp');
+      return res.status(401).json({ error: 'Missing webhook headers' });
+    }
+    
+    // Generate signature: Base64Encode(HMACSHA256(timestamp + payload, clientSecret))
+    const dataToSign = timestamp + payload.toString('utf8');
+    const expectedSignature = crypto.createHmac('sha256', clientSecret).update(dataToSign).digest('base64');
+    
     if (signature !== expectedSignature) {
       console.error('Invalid Cashfree webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
+    
     // Parse the raw body as JSON for business logic
     const event = JSON.parse(payload.toString('utf8'));
+    console.log('Webhook event received:', event);
+    
     if (event.event && event.event === 'PAYMENT_SUCCESS') {
       const payment = event.data && event.data.payment;
       const order = event.data && event.data.order;
@@ -121,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
       res.json({ paymentSessionId: response.data.payment_session_id });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Cashfree session creation error:', error?.response?.data || error.message, error);
       res.status(500).json({ error: 'Failed to create Cashfree session', details: error?.response?.data || error.message });
     }
