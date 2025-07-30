@@ -40,31 +40,52 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
     
     // Parse the raw body as JSON for business logic
     const event = JSON.parse(payload.toString('utf8'));
-    console.log('Webhook event received:', event);
+    console.log('Webhook event received:', JSON.stringify(event, null, 2));
     
-    if (event.event && event.event === 'PAYMENT_SUCCESS') {
+    // Check for both event types: PAYMENT_SUCCESS and PAYMENT_SUCCESS_WEBHOOK
+    if ((event.event && event.event === 'PAYMENT_SUCCESS') || 
+        (event.type && event.type === 'PAYMENT_SUCCESS_WEBHOOK')) {
+      console.log('Processing PAYMENT_SUCCESS event');
       const payment = event.data && event.data.payment;
       const order = event.data && event.data.order;
+      
+      console.log('Payment data:', payment);
+      console.log('Order data:', order);
+      
       if (!payment || !order) {
         console.error('Invalid webhook payload', event);
         return res.status(400).json({ error: 'Invalid webhook payload' });
       }
+      
       // Check if booking already exists for this orderId
+      console.log('Checking for existing booking with orderId:', order.order_id);
       const existing = await firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id).get();
-      if (!existing.empty) return res.status(200).json({ message: 'Booking already exists' });
+      if (!existing.empty) {
+        console.log('Booking already exists for orderId:', order.order_id);
+        return res.status(200).json({ message: 'Booking already exists' });
+      }
+      
       // Create booking in Firestore
-      await firestore.collection('bookings').add({
+      console.log('Creating new booking in Firebase');
+      const bookingData = {
         cashfreeOrderId: order.order_id,
-        cashfreePaymentId: payment.payment_id,
+        cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
         cashfreePaymentStatus: payment.payment_status,
-        fullName: order.customer_details.customer_name,
-        mobile: order.customer_details.customer_phone,
-        email: order.customer_details.customer_email,
+        fullName: order.customer_details?.customer_name || event.data.customer_details?.customer_name,
+        mobile: order.customer_details?.customer_phone || event.data.customer_details?.customer_phone,
+        email: order.customer_details?.customer_email || event.data.customer_details?.customer_email,
         amount: order.order_amount,
         paymentStatus: 'success',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      };
+      
+      console.log('Booking data to save:', bookingData);
+      await firestore.collection('bookings').add(bookingData);
+      console.log('Booking created successfully in Firebase');
+      
       return res.status(200).json({ message: 'Booking created' });
+    } else {
+      console.log('Event ignored:', event.event || event.type);
     }
     return res.status(200).json({ message: 'Event ignored' });
   } catch (error) {
@@ -130,6 +151,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           order_amount: amount,
           order_currency: 'INR',
           customer_details: customerDetails,
+          order_meta: {
+            return_url: `https://fs-sports-clubv2.onrender.com/payment-confirmation?order_id=${orderId}`
+          }
         },
         {
           headers: {
