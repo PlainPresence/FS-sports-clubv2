@@ -150,7 +150,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
       const sessionData = await sessionRes.json();
       if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
       // 2. Launch Cashfree payment UI
-      await initiateCashfreePayment(sessionData.paymentSessionId);
+      await initiateCashfreePayment(sessionData.paymentSessionId, bookingId);
       // Do NOT redirect to confirmation page here! Let Cashfree handle the redirect after payment.
       // window.location.href = `/payment-confirmation?order_id=${bookingId}`;
     } catch (error) {
