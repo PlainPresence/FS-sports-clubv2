@@ -1,3 +1,10 @@
+// TypeScript declarations for Cashfree SDK
+declare global {
+  interface Window {
+    Cashfree: any;
+  }
+}
+
 export const loadCashfree = (): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     if (window.Cashfree) {
@@ -13,7 +20,7 @@ export const loadCashfree = (): Promise<boolean> => {
   });
 };
 
-export const initiateCashfreePayment = async (paymentSessionId: string) => {
+export const initiateCashfreePayment = async (paymentSessionId: string, orderId: string) => {
   await loadCashfree();
   if (!window.Cashfree) throw new Error('Cashfree SDK not loaded');
   
@@ -24,5 +31,20 @@ export const initiateCashfreePayment = async (paymentSessionId: string) => {
   cashfree.checkout({
     paymentSessionId,
     redirectTarget: '_self',
+    onSuccess: (data: any) => {
+      console.log('Payment successful:', data);
+      // Redirect to confirmation page
+      window.location.href = `/payment-confirmation?order_id=${orderId}`;
+    },
+    onFailure: (data: any) => {
+      console.log('Payment failed:', data);
+      // Redirect back to booking page with error
+      window.location.href = `/?error=payment_failed`;
+    },
+    onClose: () => {
+      console.log('Payment window closed');
+      // User closed the payment window
+      window.location.href = `/?error=payment_cancelled`;
+    }
   });
 }; 
