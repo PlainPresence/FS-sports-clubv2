@@ -142,39 +142,14 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       const sessionData = await sessionRes.json();
       if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
       // 2. Launch Cashfree payment UI
-      await initiateCashfreePayment(sessionData.paymentSessionId);
-      // 3. TODO: After payment success, confirm and create tournament booking (should use webhook or redirect confirmation)
-      // For now, simulate booking creation after payment UI
-      const finalBookingData = {
-        ...bookingData,
-        paymentStatus: 'success',
-        bookingDate: new Date(),
-        status: 'confirmed',
-      };
-      const bookingResult = await createTournamentBooking(finalBookingData);
-      if (bookingResult && bookingResult.success) {
-        if (bookingData.email) {
-          await sendBookingConfirmation(finalBookingData);
-        }
-        toast({
-          title: 'Tournament Booking Confirmed!',
-          description: 'Your tournament slot has been booked. Confirmation sent to your email.',
-        });
-        onBookingSuccess(finalBookingData);
-        setIsProcessing(false);
-      } else {
-        toast({
-          title: 'Booking Failed',
-          description: 'Tournament booking could not be completed. Please contact support.',
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
-      }
+      await initiateCashfreePayment(sessionData.paymentSessionId, bookingData.bookingId);
+      // Payment confirmation and booking creation will be handled by webhook
+      // User will be redirected to confirmation page after payment
     } catch (error) {
       console.error('Tournament booking error:', error);
       toast({
         title: 'Error',
-        description: 'Tournament booking failed. Please try again.',
+        description: 'Booking failed. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
