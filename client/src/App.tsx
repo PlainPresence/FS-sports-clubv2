@@ -10,6 +10,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import TournamentBooking from "@/pages/TournamentBooking";
 import TournamentBook from "@/pages/TournamentBook";
+import PaymentConfirmation from "@/pages/PaymentConfirmation";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from "react-error-boundary";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/tournaments" component={TournamentBooking} />
       <Route path="/tournament/:id/book" component={TournamentBook} />
+      <Route path="/payment-confirmation" component={PaymentConfirmation} />
       <Route path="/admin-access-sptp2024" component={AdminLogin} />
       <Route path="/adminlogin" component={AdminDashboard} />
       <Route path="/refundpolicy" component={RefundPolicy} />
