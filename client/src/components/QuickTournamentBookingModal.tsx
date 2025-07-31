@@ -73,6 +73,11 @@ export default function QuickTeamBookingModal({ isOpen, onClose, onSuccess }: Qu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isProcessing) {
+      console.log('Quick tournament booking already in progress, preventing double submission');
+      return;
+    }
+    
     if (!formData.tournamentId || !formData.teamName || !formData.captainName || !formData.captainMobile || formData.amount <= 0) {
       toast({
         title: 'Validation Error',
@@ -120,6 +125,8 @@ export default function QuickTeamBookingModal({ isOpen, onClose, onSuccess }: Qu
         isAdminBooking: true, // Flag to identify admin-created bookings
       };
 
+      console.log('Creating quick tournament booking with data:', bookingData);
+
       const result = await fetch('/api/book-slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,11 +162,11 @@ export default function QuickTeamBookingModal({ isOpen, onClose, onSuccess }: Qu
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Quick tournament booking error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create tournament booking. Please try again.',
+        description: error.message || 'Failed to create tournament booking. Please try again.',
         variant: 'destructive',
       });
     } finally {
