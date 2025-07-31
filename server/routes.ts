@@ -67,6 +67,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       
       // Create booking in Firestore
       console.log('Creating new booking in Firebase');
+      const slotInfo = order.order_meta?.notes || {};
       const bookingData = {
         cashfreeOrderId: order.order_id,
         cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
@@ -77,6 +78,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         amount: order.order_amount,
         paymentStatus: 'success',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...slotInfo // Merge slot/time/sport info into booking
       };
       
       console.log('Booking data to save:', bookingData);
@@ -138,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Cashfree: Create payment session endpoint
   app.post('/api/cashfree/create-session', async (req, res) => {
-    const { orderId, amount, customerDetails } = req.body;
+    const { orderId, amount, customerDetails, slotInfo } = req.body;
     // Check for required env variables
     if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
       return res.status(500).json({ error: 'Cashfree credentials not set in environment.' });
@@ -152,7 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           order_currency: 'INR',
           customer_details: customerDetails,
           order_meta: {
-            return_url: `https://fs-sports-clubv2.onrender.com/payment-confirmation?order_id=${orderId}`
+            return_url: `https://fs-sports-clubv2.onrender.com/payment-confirmation?orderId=${orderId}`,
+            notes: slotInfo // Pass slot/time/sport info here
           }
         },
         {
@@ -167,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ paymentSessionId: response.data.payment_session_id });
     } catch (error: any) {
       console.error('Cashfree session creation error:', error?.response?.data || error.message, error);
-      res.status(500).json({ error: 'Failed to create Cashfree session', details: error?.response?.data || error.message });
+      res.status(500).json({ error: 'Failed to create payment session', details: error?.response?.data || error.message });
     }
   });
 
