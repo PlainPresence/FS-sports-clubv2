@@ -14,7 +14,7 @@ export default function PaymentConfirmation() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('orderId');
+    const orderId = params.get('orderId') || params.get('order_id');
     if (!orderId) {
       setError('Missing order ID in URL.');
       setLoading(false);
