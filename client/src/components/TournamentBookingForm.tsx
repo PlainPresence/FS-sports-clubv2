@@ -144,6 +144,8 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
             bookingId: bookingData.bookingId,
             teamName: bookingData.teamName,
             teamMembers: bookingData.teamMembers,
+            date: tournament?.startDate || new Date().toISOString().split('T')[0],
+            timeSlots: ['Tournament'],
           }
         }),
       });
