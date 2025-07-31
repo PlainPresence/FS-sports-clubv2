@@ -93,8 +93,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
-    "@tailwindcss/typography": "^0.5.15",
-    "cashfree-pg": "^1.0.0"
+    "@tailwindcss/typography": "^0.5.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.3",
