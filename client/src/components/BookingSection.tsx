@@ -145,6 +145,14 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
             customer_phone: data.mobile,
             customer_name: data.fullName,
           },
+          slotInfo: {
+            date: data.date,
+            sportType: data.facilityType,
+            timeSlots: data.timeSlots,
+            bookingId,
+            speedMeter,
+            speedMeterPrice: bookingData.speedMeterPrice,
+          }
         }),
       });
       const sessionData = await sessionRes.json();
