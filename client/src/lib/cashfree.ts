@@ -31,19 +31,14 @@ export const initiateCashfreePayment = async (paymentSessionId: string, orderId:
   cashfree.checkout({
     paymentSessionId,
     redirectTarget: '_self',
+    redirectUrl: `https://fs-sports-clubv2.onrender.com/payment-confirmation?orderId=${orderId}`,
     onSuccess: (data: any) => {
-      console.log('Payment successful:', data);
-      // Redirect to confirmation page
-      window.location.href = `/payment-confirmation?order_id=${orderId}`;
+      window.location.href = `/payment-confirmation?orderId=${orderId}`;
     },
     onFailure: (data: any) => {
-      console.log('Payment failed:', data);
-      // Redirect back to booking page with error
       window.location.href = `/?error=payment_failed`;
     },
     onClose: () => {
-      console.log('Payment window closed');
-      // User closed the payment window
       window.location.href = `/?error=payment_cancelled`;
     }
   });
