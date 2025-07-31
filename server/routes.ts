@@ -7,7 +7,6 @@ import crypto from "crypto";
 import admin from 'firebase-admin';
 import axios from 'axios';
 import type { Request, Response } from 'express';
-import { Cashfree, CFEnvironment } from "cashfree-pg";
 
 // Export the webhook handler for use in index.ts
 export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
@@ -114,13 +113,6 @@ if (!admin.apps.length) {
 }
 const firestore = admin.firestore();
 
-// Initialize Cashfree client (use env vars for keys)
-const cashfree = new Cashfree(
-  process.env.NODE_ENV === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
-  process.env.CASHFREE_CLIENT_ID,
-  process.env.CASHFREE_CLIENT_SECRET
-);
-
 // Cashfree API URL selection based on environment
 const cashfreeApiUrl = process.env.NODE_ENV === 'production'
   ? 'https://api.cashfree.com/pg/orders'
@@ -154,22 +146,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cashfree: Create payment session endpoint
   app.post('/api/cashfree/create-session', async (req, res) => {
     const { orderId, amount, customerDetails, slotInfo } = req.body;
+    // Check for required env variables
+    if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
+      return res.status(500).json({ error: 'Cashfree credentials not set in environment.' });
+    }
     try {
-      const request = {
-        order_amount: amount,
-        order_currency: "INR",
-        order_id: orderId,
-        customer_details: customerDetails,
-        order_meta: {
-          return_url: `https://fs-sports-clubv2.onrender.com/payment-confirmation?order_id={order_id}`,
-          notify_url: `https://fs-sports-clubv2.onrender.com/api/cashfree/webhook`,
-          notes: slotInfo // This will include date, timeSlots, etc.
+      const response = await axios.post(
+        cashfreeApiUrl,
+        {
+          order_id: orderId,
+          order_amount: amount,
+          order_currency: 'INR',
+          customer_details: customerDetails,
+          order_meta: {
+            return_url: `https://fs-sports-clubv2.onrender.com/payment-confirmation?order_id={order_id}`,
+            notify_url: `https://fs-sports-clubv2.onrender.com/api/cashfree/webhook`,
+            notes: slotInfo // This will include date, timeSlots, etc.
+          }
+        },
+        {
+          headers: {
+            'x-client-id': process.env.CASHFREE_CLIENT_ID,
+            'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+            'Content-Type': 'application/json',
+            'x-api-version': '2025-01-01', // Required for Cashfree 2025
+          },
         }
-      };
-      const response = await cashfree.PGCreateOrder(request);
+      );
       res.json({ paymentSessionId: response.data.payment_session_id });
     } catch (error: any) {
-      res.status(500).json({ error: error.response?.data?.message || error.message });
+      console.error('Cashfree session creation error:', error?.response?.data || error.message, error);
+      res.status(500).json({ error: 'Failed to create payment session', details: error?.response?.data || error.message });
     }
   });
 
