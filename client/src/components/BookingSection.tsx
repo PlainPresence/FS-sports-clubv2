@@ -100,6 +100,11 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   };
 
   const onSubmit = async (data: any) => {
+    if (isProcessing) {
+      console.log('Booking already in progress, preventing double submission');
+      return;
+    }
+    
     setIsProcessing(true);
     try {
       const bookingId = generateBookingId();
@@ -132,11 +137,14 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         sportType: data.facilityType, // Add sportType field for consistency
         facilityType: data.facilityType,
       };
+      
+      console.log('Creating booking with data:', bookingData);
+      
       // 1. Create Cashfree payment session
       const sessionRes = await fetch('/api/cashfree/create-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           orderId: bookingId,
           amount,
           customerDetails: {
@@ -155,17 +163,28 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
           }
         }),
       });
+      
+      if (!sessionRes.ok) {
+        const errorData = await sessionRes.json();
+        throw new Error(errorData.error || 'Failed to create payment session');
+      }
+      
       const sessionData = await sessionRes.json();
       if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
+      
+      console.log('Payment session created, launching Cashfree...');
+      
       // 2. Launch Cashfree payment UI
       await initiateCashfreePayment(sessionData.paymentSessionId, bookingId);
-      // Do NOT redirect to confirmation page here! Let Cashfree handle the redirect after payment.
-      // window.location.href = `/payment-confirmation?order_id=${bookingId}`;
-    } catch (error) {
+      
+      // Note: Don't reset isProcessing here as the user is redirected to Cashfree
+      // The processing state will be reset when they return to the confirmation page
+      
+    } catch (error: any) {
       console.error('Booking error:', error);
       toast({
         title: 'Error',
-        description: 'Booking failed. Please try again.',
+        description: error.message || 'Booking failed. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
