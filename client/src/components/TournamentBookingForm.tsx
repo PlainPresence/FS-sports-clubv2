@@ -133,10 +133,18 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
           amount: bookingData.amount,
           customerDetails: {
             customer_id: bookingData.bookingId,
-            customer_email: bookingData.email,
-            customer_phone: bookingData.mobile,
-            customer_name: bookingData.fullName,
+            customer_email: bookingData.captainEmail,
+            customer_phone: bookingData.captainMobile,
+            customer_name: bookingData.captainName,
           },
+          slotInfo: {
+            tournamentId: bookingData.tournamentId,
+            tournamentName: bookingData.tournamentName,
+            sportType: bookingData.sportType,
+            bookingId: bookingData.bookingId,
+            teamName: bookingData.teamName,
+            teamMembers: bookingData.teamMembers,
+          }
         }),
       });
       const sessionData = await sessionRes.json();
