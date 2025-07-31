@@ -110,6 +110,29 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         }
       }
       
+      // Check for double booking - prevent booking the same slots
+      console.log('Checking for double booking...');
+      const timeSlots = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
+      const existingBookings = await firestore.collection('bookings')
+        .where('date', '==', finalSlotInfo.date)
+        .where('sportType', '==', finalSlotInfo.sportType)
+        .where('paymentStatus', '==', 'success')
+        .get();
+      
+      const bookedSlots = existingBookings.docs.flatMap(doc => {
+        const data = doc.data();
+        return Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
+      });
+      
+      const conflictingSlots = timeSlots.filter((slot: string) => bookedSlots.includes(slot));
+      if (conflictingSlots.length > 0) {
+        console.log('Double booking detected for slots:', conflictingSlots);
+        return res.status(409).json({ 
+          error: 'Slots already booked', 
+          conflictingSlots 
+        });
+      }
+      
       // Ensure we have minimum required data for booking
       const bookingData = {
         cashfreeOrderId: order.order_id,
@@ -266,6 +289,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ success: true, booking });
     } catch (error) {
       return res.status(500).json({ success: false, error: 'Failed to fetch booking' });
+    }
+  });
+
+  // API endpoint to fetch slot availability
+  app.get('/api/slots/availability', async (req, res) => {
+    const { date, sportType } = req.query;
+    if (!date || !sportType) {
+      return res.status(400).json({ success: false, error: 'Missing date or sportType' });
+    }
+    
+    try {
+      // Get booked slots
+      const bookedSlotsSnapshot = await firestore.collection('bookings')
+        .where('date', '==', date)
+        .where('sportType', '==', sportType)
+        .where('paymentStatus', '==', 'success')
+        .get();
+      
+      // Get blocked slots
+      const blockedSlotsSnapshot = await firestore.collection('blockedSlots')
+        .where('date', '==', date)
+        .where('sportType', '==', sportType)
+        .get();
+      
+      // Get slot availability data
+      const slotAvailabilitySnapshot = await firestore.collection('slotAvailability')
+        .where('date', '==', date)
+        .where('sportType', '==', sportType)
+        .get();
+      
+      const bookedSlots = bookedSlotsSnapshot.docs.flatMap(doc => {
+        const data = doc.data();
+        return Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
+      });
+      
+      const blockedSlots = blockedSlotsSnapshot.docs.map(doc => doc.data().timeSlot);
+      
+      const slotAvailability = slotAvailabilitySnapshot.docs.map(doc => doc.data());
+      
+      return res.json({
+        success: true,
+        slots: slotAvailability,
+        bookedSlots,
+        blockedSlots,
+        date,
+        sportType
+      });
+    } catch (error) {
+      console.error('Error fetching slot availability:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch slot availability' });
     }
   });
 
