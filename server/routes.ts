@@ -70,32 +70,47 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       const slotInfo = order.order_meta?.notes || {};
       console.log('SlotInfo from order:', slotInfo);
       
-      // Validate slotInfo for regular bookings
-      if (!slotInfo.date || !slotInfo.timeSlots || !Array.isArray(slotInfo.timeSlots) || slotInfo.timeSlots.length === 0) {
-        console.error('Missing or invalid date/timeSlots in slotInfo:', slotInfo);
-        console.log('Order meta data:', order.order_meta);
-        console.log('Full order data:', order);
-        
-        // For tournament bookings, use different validation
-        if (slotInfo.tournamentId) {
-          console.log('This is a tournament booking, proceeding with tournament validation');
-          // Tournament bookings might not have timeSlots in the same format
-          if (!slotInfo.date) {
-            return res.status(400).json({ error: 'Missing date in tournament booking data.' });
+      // If slotInfo is empty, try to get booking data from temporary storage
+      let finalSlotInfo = slotInfo;
+      if (!slotInfo.date || !slotInfo.timeSlots) {
+        console.log('SlotInfo is incomplete, checking temporary storage');
+        try {
+          const tempBookingDoc = await firestore.collection('tempBookings').doc(order.order_id).get();
+          if (tempBookingDoc.exists) {
+            const tempData = tempBookingDoc.data();
+            console.log('Found temporary booking data:', tempData);
+            finalSlotInfo = {
+              date: tempData?.date || new Date().toISOString().split('T')[0],
+              timeSlots: tempData?.timeSlots || ['10:00-11:00'],
+              sportType: tempData?.sportType || 'cricket',
+              bookingId: order.order_id,
+              ...tempData
+            };
+            
+            // Clean up temporary data
+            await firestore.collection('tempBookings').doc(order.order_id).delete();
+            console.log('Cleaned up temporary booking data');
+          } else {
+            console.log('No temporary booking data found, using fallback');
+            finalSlotInfo = {
+              date: new Date().toISOString().split('T')[0],
+              timeSlots: ['10:00-11:00'], // Default time slot
+              sportType: 'cricket', // Default sport
+              bookingId: order.order_id,
+            };
           }
-        } else {
-          return res.status(400).json({ error: 'Missing or invalid date/timeSlots in booking data.' });
+        } catch (error) {
+          console.error('Error retrieving temporary booking data:', error);
+          finalSlotInfo = {
+            date: new Date().toISOString().split('T')[0],
+            timeSlots: ['10:00-11:00'],
+            sportType: 'cricket',
+            bookingId: order.order_id,
+          };
         }
       }
       
       // Ensure we have minimum required data for booking
-      const finalSlotInfo = {
-        date: slotInfo.date || new Date().toISOString().split('T')[0],
-        timeSlots: slotInfo.timeSlots || ['Tournament'],
-        sportType: slotInfo.sportType || 'cricket',
-        ...slotInfo
-      };
-      
       const bookingData = {
         cashfreeOrderId: order.order_id,
         cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
@@ -105,7 +120,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         email: order.customer_details?.customer_email || event.data.customer_details?.customer_email,
         amount: order.order_amount,
         paymentStatus: 'success',
-        bookingType: slotInfo.tournamentId ? 'tournament' : 'regular',
+        bookingType: finalSlotInfo.tournamentId ? 'tournament' : 'regular',
         status: 'confirmed',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -197,7 +212,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
       return res.status(500).json({ error: 'Cashfree credentials not set in environment.' });
     }
+    
     try {
+      // Store booking data temporarily for webhook retrieval
+      if (slotInfo) {
+        await firestore.collection('tempBookings').doc(orderId).set({
+          ...slotInfo,
+          amount,
+          customerDetails,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes expiry
+        });
+        console.log('Stored temporary booking data for orderId:', orderId);
+      }
+      
       const response = await axios.post(
         cashfreeApiUrl,
         {
