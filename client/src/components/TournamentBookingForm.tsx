@@ -108,6 +108,11 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
 
   const onSubmit = async (data: TournamentFormData) => {
     if (!tournament) return;
+    
+    if (isProcessing) {
+      console.log('Tournament booking already in progress, preventing double submission');
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -123,6 +128,8 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
         tournamentName: tournament.name,
         sportType: tournament.sportType,
       };
+
+      console.log('Creating tournament booking with data:', bookingData);
 
       // 1. Create Cashfree payment session
       const sessionRes = await fetch('/api/cashfree/create-session', {
@@ -146,20 +153,32 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
             teamMembers: bookingData.teamMembers,
             date: tournament?.startDate || new Date().toISOString().split('T')[0],
             timeSlots: ['Tournament'],
+            bookingType: 'tournament',
           }
         }),
       });
+      
+      if (!sessionRes.ok) {
+        const errorData = await sessionRes.json();
+        throw new Error(errorData.error || 'Failed to create payment session');
+      }
+      
       const sessionData = await sessionRes.json();
       if (!sessionData.paymentSessionId) throw new Error('Failed to create payment session');
+      
+      console.log('Tournament payment session created, launching Cashfree...');
+      
       // 2. Launch Cashfree payment UI
       await initiateCashfreePayment(sessionData.paymentSessionId, bookingData.bookingId);
-      // Payment confirmation and booking creation will be handled by webhook
-      // User will be redirected to confirmation page after payment
-    } catch (error) {
+      
+      // Note: Don't reset isProcessing here as the user is redirected to Cashfree
+      // The processing state will be reset when they return to the confirmation page
+      
+    } catch (error: any) {
       console.error('Tournament booking error:', error);
       toast({
         title: 'Error',
-        description: 'Booking failed. Please try again.',
+        description: error.message || 'Tournament booking failed. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
