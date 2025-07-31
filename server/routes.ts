@@ -68,6 +68,11 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       // Create booking in Firestore
       console.log('Creating new booking in Firebase');
       const slotInfo = order.order_meta?.notes || {};
+      // Validate slotInfo for regular bookings
+      if (!slotInfo.date || !slotInfo.timeSlots || !Array.isArray(slotInfo.timeSlots) || slotInfo.timeSlots.length === 0) {
+        console.error('Missing or invalid date/timeSlots in slotInfo:', slotInfo);
+        return res.status(400).json({ error: 'Missing or invalid date/timeSlots in booking data.' });
+      }
       const bookingData = {
         cashfreeOrderId: order.order_id,
         cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
