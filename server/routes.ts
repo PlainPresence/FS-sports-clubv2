@@ -68,11 +68,34 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       // Create booking in Firestore
       console.log('Creating new booking in Firebase');
       const slotInfo = order.order_meta?.notes || {};
+      console.log('SlotInfo from order:', slotInfo);
+      
       // Validate slotInfo for regular bookings
       if (!slotInfo.date || !slotInfo.timeSlots || !Array.isArray(slotInfo.timeSlots) || slotInfo.timeSlots.length === 0) {
         console.error('Missing or invalid date/timeSlots in slotInfo:', slotInfo);
-        return res.status(400).json({ error: 'Missing or invalid date/timeSlots in booking data.' });
+        console.log('Order meta data:', order.order_meta);
+        console.log('Full order data:', order);
+        
+        // For tournament bookings, use different validation
+        if (slotInfo.tournamentId) {
+          console.log('This is a tournament booking, proceeding with tournament validation');
+          // Tournament bookings might not have timeSlots in the same format
+          if (!slotInfo.date) {
+            return res.status(400).json({ error: 'Missing date in tournament booking data.' });
+          }
+        } else {
+          return res.status(400).json({ error: 'Missing or invalid date/timeSlots in booking data.' });
+        }
       }
+      
+      // Ensure we have minimum required data for booking
+      const finalSlotInfo = {
+        date: slotInfo.date || new Date().toISOString().split('T')[0],
+        timeSlots: slotInfo.timeSlots || ['Tournament'],
+        sportType: slotInfo.sportType || 'cricket',
+        ...slotInfo
+      };
+      
       const bookingData = {
         cashfreeOrderId: order.order_id,
         cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
@@ -82,16 +105,37 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         email: order.customer_details?.customer_email || event.data.customer_details?.customer_email,
         amount: order.order_amount,
         paymentStatus: 'success',
+        bookingType: slotInfo.tournamentId ? 'tournament' : 'regular',
+        status: 'confirmed',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        ...slotInfo // Merge slot/time/sport info into booking
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...finalSlotInfo // Merge slot/time/sport info into booking
       };
       
       console.log('Booking data to save:', bookingData);
       console.log('Date field:', bookingData.date);
       console.log('TimeSlots field:', bookingData.timeSlots);
       console.log('SportType field:', bookingData.sportType);
+      console.log('BookingType field:', bookingData.bookingType);
+      console.log('Status field:', bookingData.status);
+      
       await firestore.collection('bookings').add(bookingData);
       console.log('Booking created successfully in Firebase');
+      
+      // Update slot availability in real-time
+      if (bookingData.date && bookingData.timeSlots && bookingData.sportType) {
+        const timeSlots = Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots : [bookingData.timeSlots];
+        for (const timeSlot of timeSlots) {
+          await firestore.collection('slotAvailability').add({
+            date: bookingData.date,
+            sportType: bookingData.sportType,
+            timeSlot: timeSlot,
+            status: 'booked',
+            bookingId: bookingData.bookingId || bookingData.cashfreeOrderId,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
       
       return res.status(200).json({ message: 'Booking created' });
     } else {
@@ -194,6 +238,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ success: true, booking });
     } catch (error) {
       return res.status(500).json({ success: false, error: 'Failed to fetch booking' });
+    }
+  });
+
+  // Test endpoint to create a booking manually (for testing)
+  app.post('/api/test/create-booking', async (req, res) => {
+    try {
+      const { orderId, amount, customerDetails, slotInfo } = req.body;
+      
+      const bookingData = {
+        cashfreeOrderId: orderId,
+        cashfreePaymentId: 'test_payment_123',
+        cashfreePaymentStatus: 'SUCCESS',
+        fullName: customerDetails?.customer_name || 'Test User',
+        mobile: customerDetails?.customer_phone || '1234567890',
+        email: customerDetails?.customer_email || 'test@example.com',
+        amount: amount || 100,
+        paymentStatus: 'success',
+        bookingType: slotInfo?.tournamentId ? 'tournament' : 'regular',
+        status: 'confirmed',
+        date: slotInfo?.date || new Date().toISOString().split('T')[0],
+        timeSlots: slotInfo?.timeSlots || ['10:00-11:00'],
+        sportType: slotInfo?.sportType || 'cricket',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...slotInfo
+      };
+      
+      console.log('Creating test booking:', bookingData);
+      await firestore.collection('bookings').add(bookingData);
+      console.log('Test booking created successfully');
+      
+      res.json({ success: true, message: 'Test booking created', bookingId: orderId });
+    } catch (error) {
+      console.error('Test booking creation failed:', error);
+      res.status(500).json({ success: false, error: 'Failed to create test booking' });
     }
   });
 
