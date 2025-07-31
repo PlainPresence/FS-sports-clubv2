@@ -87,6 +87,9 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       };
       
       console.log('Booking data to save:', bookingData);
+      console.log('Date field:', bookingData.date);
+      console.log('TimeSlots field:', bookingData.timeSlots);
+      console.log('SportType field:', bookingData.sportType);
       await firestore.collection('bookings').add(bookingData);
       console.log('Booking created successfully in Firebase');
       
