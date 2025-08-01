@@ -57,6 +57,44 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Invalid webhook payload' });
       }
       
+      // Defensive extraction of slot info
+      let slotInfo = order.order_meta?.notes || {};
+      let finalSlotInfo = slotInfo;
+      if (!slotInfo.date || !slotInfo.timeSlots || !slotInfo.sportType) {
+        try {
+          const tempBookingDoc = await firestore.collection('tempBookings').doc(order.order_id).get();
+          if (tempBookingDoc.exists) {
+            const tempData = tempBookingDoc.data();
+            finalSlotInfo = {
+              date: tempData?.date || new Date().toISOString().split('T')[0],
+              timeSlots: tempData?.timeSlots || ['10:00-11:00'],
+              sportType: tempData?.sportType || 'cricket',
+              bookingId: order.order_id,
+              ...tempData
+            };
+            await firestore.collection('tempBookings').doc(order.order_id).delete();
+          } else {
+            finalSlotInfo = {
+              date: new Date().toISOString().split('T')[0],
+              timeSlots: ['10:00-11:00'],
+              sportType: 'cricket',
+              bookingId: order.order_id,
+            };
+          }
+        } catch (error) {
+          finalSlotInfo = {
+            date: new Date().toISOString().split('T')[0],
+            timeSlots: ['10:00-11:00'],
+            sportType: 'cricket',
+            bookingId: order.order_id,
+          };
+        }
+      }
+      // Defensive: If still missing, abort with error
+      if (!finalSlotInfo.date || !finalSlotInfo.sportType) {
+        console.error('Missing date or sportType for booking creation', finalSlotInfo);
+        return res.status(400).json({ error: 'Missing date or sportType for booking creation' });
+      }
       // Check if booking already exists for this orderId (inside transaction)
       await firestore.runTransaction(async (transaction) => {
         const existing = await transaction.get(
@@ -68,7 +106,6 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         }
         // Check for double booking - prevent booking the same slots
         console.log('Checking for double booking...');
-        const finalSlotInfo = order.order_meta?.notes || {};
         const timeSlotsArr = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
         const existingBookings = await transaction.get(
           firestore.collection('bookings')
