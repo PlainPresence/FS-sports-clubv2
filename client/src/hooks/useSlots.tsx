@@ -30,10 +30,15 @@ export const useSlots = (date: string, sportType: string) => {
     const startHour = 0; // Midnight
     const endHour = 24; // End of day
     
+    function formatSlot(hour: number) {
+      const start = new Date(0, 0, 0, hour, 0, 0);
+      const end = new Date(0, 0, 0, hour + 1, 0, 0);
+      const options = { hour: 'numeric', minute: '2-digit', hour12: true } as const;
+      return `${start.toLocaleTimeString([], options)} - ${end.toLocaleTimeString([], options)}`;
+    }
     for (let hour = startHour; hour < endHour; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
-      const display = `${hour}:00 - ${hour + 1}:00`;
-      
+      const display = formatSlot(hour);
       allSlots.push({
         time,
         display,
