@@ -27,8 +27,8 @@ export const useSlots = (date: string, sportType: string) => {
   // Generate all possible time slots
   const generateAllSlots = () => {
     const allSlots: SlotInfo[] = [];
-    const startHour = 6; // 6 AM
-    const endHour = 22; // 10 PM
+    const startHour = 0; // Midnight
+    const endHour = 24; // End of day
     
     for (let hour = startHour; hour < endHour; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
