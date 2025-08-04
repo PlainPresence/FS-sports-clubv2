@@ -114,10 +114,23 @@ export const useSlots = (date: string, sportType: string) => {
     const handleSlotUpdate = (data: any) => {
       if (data.date === date && data.sportType === sportType) {
         console.log('Received slot update:', data);
-        // Update slots based on real-time data
+        // Normalize backend bookedSlots to display format for comparison
+        const bookedSlotsDisplay = (data.bookedSlots || []).map((slot: string) => {
+          if (/AM|PM|am|pm/.test(slot)) return slot;
+          const [start, end] = slot.split('-');
+          const to12h = (t: string) => {
+            const [h, m] = t.split(':');
+            let hour = parseInt(h, 10);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+          };
+          return `${to12h(start)} - ${to12h(end)}`;
+        });
         setSlots(prevSlots => 
           prevSlots.map(slot => {
-            const isBooked = data.bookedSlots?.includes(slot.time) || false;
+            const isBooked = bookedSlotsDisplay.includes(slot.display);
             return {
               ...slot,
               booked: isBooked,
@@ -131,9 +144,25 @@ export const useSlots = (date: string, sportType: string) => {
     const handleSlotAvailabilityUpdate = (data: any) => {
       if (data.date === date && data.sportType === sportType) {
         console.log('Received slot availability update:', data);
+        // Normalize backend slotData.timeSlot to display format for comparison
         setSlots(prevSlots => 
           prevSlots.map(slot => {
-            const slotData = data.timeSlots?.find((s: any) => s.timeSlot === slot.time);
+            const slotData = data.timeSlots?.find((s: any) => {
+              if (/AM|PM|am|pm/.test(s.timeSlot)) {
+                return s.timeSlot === slot.display;
+              } else {
+                const [start, end] = s.timeSlot.split('-');
+                const to12h = (t: string) => {
+                  const [h, m] = t.split(':');
+                  let hour = parseInt(h, 10);
+                  const ampm = hour >= 12 ? 'PM' : 'AM';
+                  hour = hour % 12;
+                  if (hour === 0) hour = 12;
+                  return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+                };
+                return `${to12h(start)} - ${to12h(end)}` === slot.display;
+              }
+            });
             if (slotData) {
               return {
                 ...slot,
