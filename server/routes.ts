@@ -11,18 +11,18 @@ import type { Request, Response } from 'express';
 // Export the webhook handler for use in index.ts
 export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
     // Helper to normalize a time slot string to 'hh:mm AM/PM - hh:mm AM/PM'
-    function normalizeTimeSlot(slot) {
+    function normalizeTimeSlot(slot: string): string {
       // Already in correct format
       if (/AM|PM|am|pm/.test(slot)) return slot;
       // Convert 'HH:mm-HH:mm' to 'hh:mm AM/PM - hh:mm AM/PM'
       const [start, end] = slot.split('-');
-      function to12h(t) {
-        let [h, m] = t.split(':');
-        h = parseInt(h, 10);
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12;
-        if (h === 0) h = 12;
-        return `${h.toString().padStart(2, '0')}:${m} ${ampm}`;
+      function to12h(t: string): string {
+        const [hStr, m] = t.split(':');
+        let hNum = parseInt(hStr, 10);
+        const ampm = hNum >= 12 ? 'PM' : 'AM';
+        hNum = hNum % 12;
+        if (hNum === 0) hNum = 12;
+        return `${hNum.toString().padStart(2, '0')}:${m} ${ampm}`;
       }
       if (start && end) return `${to12h(start)} - ${to12h(end)}`;
       return slot;
@@ -128,23 +128,25 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         }
         // Check for double booking - prevent booking the same slots
         console.log('Checking for double booking...');
-        const timeSlotsArr = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
+        const timeSlotsArr: string[] = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
         // Normalize all time slots for this booking
-        const normalizedTimeSlotsArr = timeSlotsArr.map(normalizeTimeSlot);
+        const normalizedTimeSlotsArr: string[] = timeSlotsArr.map(normalizeTimeSlot);
+        console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
         const existingBookings = await transaction.get(
           firestore.collection('bookings')
             .where('date', '==', finalSlotInfo.date)
             .where('sportType', '==', finalSlotInfo.sportType)
             .where('paymentStatus', '==', 'success')
         );
-        const bookedSlots = existingBookings.docs.flatMap(doc => {
+        const bookedSlots: string[] = existingBookings.docs.flatMap(doc => {
           const data = doc.data();
-          const slots = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
+          console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
+          const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
           return slots.map(normalizeTimeSlot);
         });
-        const conflictingSlots = normalizedTimeSlotsArr.filter((slot) => bookedSlots.includes(slot));
+        const conflictingSlots: string[] = normalizedTimeSlotsArr.filter((slot: string) => bookedSlots.includes(slot));
         if (conflictingSlots.length > 0) {
-          console.log('Double booking detected for slots:', conflictingSlots);
+          console.log('Double booking detected for slots:', conflictingSlots, 'on date:', finalSlotInfo.date);
           throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
         }
         // Ensure we have minimum required data for booking
