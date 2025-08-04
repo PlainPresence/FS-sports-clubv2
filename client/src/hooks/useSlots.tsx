@@ -18,11 +18,79 @@ export interface SlotAvailability {
   lastUpdated: string;
 }
 
-export const useSlots = (date: string, sportType: string) => {
   const [slots, setSlots] = useState<SlotInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const webSocket = useWebSocket();
+
+  // Handler for real-time slot updates
+  const handleSlotUpdate = (data: any) => {
+    if (data.date === date && data.sportType === sportType) {
+      console.log('Received slot update:', data);
+      // Normalize backend bookedSlots to display format for comparison
+      const bookedSlotsDisplay = (data.bookedSlots || []).map((slot: string) => {
+        if (/AM|PM|am|pm/.test(slot)) return slot;
+        const [start, end] = slot.split('-');
+        const to12h = (t: string) => {
+          const [h, m] = t.split(':');
+          let hour = parseInt(h, 10);
+          const ampm = hour >= 12 ? 'PM' : 'AM';
+          hour = hour % 12;
+          if (hour === 0) hour = 12;
+          return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+        };
+        return `${to12h(start)} - ${to12h(end)}`;
+      });
+      setSlots(prevSlots => prevSlots.map(slot => {
+        const isBooked = bookedSlotsDisplay.includes(slot.display);
+        return {
+          ...slot,
+          booked: isBooked,
+          available: !isBooked && !slot.blocked,
+        };
+      }));
+    }
+  };
+
+  // Handler for slot availability update (if needed)
+  const handleSlotAvailabilityUpdate = (data: any) => {
+    if (data.date === date && data.sportType === sportType) {
+      console.log('Received slot availability update:', data);
+      setSlots(prevSlots => prevSlots.map(slot => {
+        const slotData = data.timeSlots?.find((s: any) => {
+          if (/AM|PM|am|pm/.test(s.timeSlot)) {
+            return s.timeSlot === slot.display;
+          } else {
+            const [start, end] = s.timeSlot.split('-');
+            const to12h = (t: string) => {
+              const [h, m] = t.split(':');
+              let hour = parseInt(h, 10);
+              const ampm = hour >= 12 ? 'PM' : 'AM';
+              hour = hour % 12;
+              if (hour === 0) hour = 12;
+              return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+            };
+            return `${to12h(start)} - ${to12h(end)}` === slot.display;
+          }
+        });
+        if (slotData) {
+          return {
+            ...slot,
+            booked: slotData.status === 'booked',
+            blocked: slotData.status === 'blocked',
+            available: slotData.status === 'available',
+          };
+        }
+        return slot;
+      }));
+    }
+  };
+
+  // Attach handlers to WebSocket
+  useWebSocket({
+    onSlotUpdate: handleSlotUpdate,
+    onSlotBlocked: handleSlotAvailabilityUpdate, // or use correct event if needed
+    onSystemMessage: () => {},
+  });
 
   // Generate all possible time slots
   const generateAllSlots = () => {
@@ -106,13 +174,10 @@ export const useSlots = (date: string, sportType: string) => {
     }
   };
 
-  // Listen for real-time slot updates
-  useEffect(() => {
-    // If your useWebSocket hook exposes an 'on' and 'off' method for events:
-    if (!webSocket || typeof webSocket.on !== 'function' || typeof webSocket.off !== 'function') return;
-
-    const handleSlotUpdate = (data: any) => {
-      if (data.date === date && data.sportType === sportType) {
+  // Listen for real-time slot updates using useWebSocket's options
+  useWebSocket({
+    onSlotUpdate: (data: any) => {
+      if (data.date === dateRef.current && data.sportType === sportTypeRef.current) {
         console.log('Received slot update:', data);
         // Normalize backend bookedSlots to display format for comparison
         const bookedSlotsDisplay = (data.bookedSlots || []).map((slot: string) => {
@@ -128,63 +193,24 @@ export const useSlots = (date: string, sportType: string) => {
           };
           return `${to12h(start)} - ${to12h(end)}`;
         });
-        setSlots(prevSlots => 
-          prevSlots.map(slot => {
-            const isBooked = bookedSlotsDisplay.includes(slot.display);
-            return {
-              ...slot,
-              booked: isBooked,
-              available: !isBooked && !slot.blocked,
-            };
-          })
-        );
+        setSlots(slotsRef.current.map(slot => {
+          const isBooked = bookedSlotsDisplay.includes(slot.display);
+          return {
+            ...slot,
+            booked: isBooked,
+            available: !isBooked && !slot.blocked,
+          };
+        }));
       }
-    };
-
-    const handleSlotAvailabilityUpdate = (data: any) => {
-      if (data.date === date && data.sportType === sportType) {
-        console.log('Received slot availability update:', data);
-        // Normalize backend slotData.timeSlot to display format for comparison
-        setSlots(prevSlots => 
-          prevSlots.map(slot => {
-            const slotData = data.timeSlots?.find((s: any) => {
-              if (/AM|PM|am|pm/.test(s.timeSlot)) {
-                return s.timeSlot === slot.display;
-              } else {
-                const [start, end] = s.timeSlot.split('-');
-                const to12h = (t: string) => {
-                  const [h, m] = t.split(':');
-                  let hour = parseInt(h, 10);
-                  const ampm = hour >= 12 ? 'PM' : 'AM';
-                  hour = hour % 12;
-                  if (hour === 0) hour = 12;
-                  return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
-                };
-                return `${to12h(start)} - ${to12h(end)}` === slot.display;
-              }
-            });
-            if (slotData) {
-              return {
-                ...slot,
-                booked: slotData.status === 'booked',
-                blocked: slotData.status === 'blocked',
-                available: slotData.status === 'available',
-              };
-            }
-            return slot;
-          })
-        );
-      }
-    };
-
-    webSocket.on('slot_update', handleSlotUpdate);
-    webSocket.on('slot_availability_update', handleSlotAvailabilityUpdate);
-
-    return () => {
-      webSocket.off('slot_update', handleSlotUpdate);
-      webSocket.off('slot_availability_update', handleSlotAvailabilityUpdate);
-    };
-  }, [webSocket, date, sportType]);
+    },
+    onSlotBlocked: (data: any) => {
+      // Optionally handle slot blocked events
+    },
+    onSystemMessage: (data: any) => {
+      // Optionally handle system messages
+    },
+    // Add more handlers as needed
+  });
 
   // Fetch slots when date or sportType changes
   useEffect(() => {
