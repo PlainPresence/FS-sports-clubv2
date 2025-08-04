@@ -1,5 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from './useWebSocket';
+
+export const useSlots = (date: string, sportType: string) => {
 
 export interface SlotInfo {
   time: string;
@@ -91,6 +94,86 @@ export interface SlotAvailability {
     onSlotBlocked: handleSlotAvailabilityUpdate, // or use correct event if needed
     onSystemMessage: () => {},
   });
+
+  // ...existing code...
+
+  // Fetch slot availability from backend
+  const fetchSlotAvailability = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/slots/availability?date=${date}&sportType=${sportType}`);
+      const data = await response.json();
+      if (data.success) {
+        // Collect booked and blocked slots in display format for comparison
+        const bookedSlotsDisplay = (data.slots || [])
+          .filter((slot: SlotAvailability) => slot.status === 'booked')
+          .map((slot: SlotAvailability) => {
+            // Convert slot.timeSlot (e.g. '00:00-01:00') to display format
+            const [start, end] = slot.timeSlot.split('-');
+            const to12h = (t: string) => {
+              const [h, m] = t.split(':');
+              let hour = parseInt(h, 10);
+              const ampm = hour >= 12 ? 'PM' : 'AM';
+              hour = hour % 12;
+              if (hour === 0) hour = 12;
+              return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+            };
+            return `${to12h(start)} - ${to12h(end)}`;
+          });
+        const blockedSlotsDisplay = (data.slots || [])
+          .filter((slot: SlotAvailability) => slot.status === 'blocked')
+          .map((slot: SlotAvailability) => {
+            const [start, end] = slot.timeSlot.split('-');
+            const to12h = (t: string) => {
+              const [h, m] = t.split(':');
+              let hour = parseInt(h, 10);
+              const ampm = hour >= 12 ? 'PM' : 'AM';
+              hour = hour % 12;
+              if (hour === 0) hour = 12;
+              return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+            };
+            return `${to12h(start)} - ${to12h(end)}`;
+          });
+        const allSlots = generateAllSlots();
+        const updatedSlots = allSlots.map(slot => ({
+          ...slot,
+          booked: bookedSlotsDisplay.includes(slot.display),
+          blocked: blockedSlotsDisplay.includes(slot.display),
+          available: !bookedSlotsDisplay.includes(slot.display) && !blockedSlotsDisplay.includes(slot.display),
+        }));
+        setSlots(updatedSlots);
+      } else {
+        setError(data.error || 'Failed to fetch slot availability');
+      }
+    } catch (err) {
+      setError('Failed to fetch slot availability');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch slots when date or sportType changes
+  useEffect(() => {
+    if (date && sportType) {
+      fetchSlotAvailability();
+    }
+  }, [date, sportType]);
+
+  // Expose refetch function for external use
+  const refetchSlots = useCallback(() => {
+    if (date && sportType) {
+      console.log('Refetching slots for:', date, sportType);
+      fetchSlotAvailability();
+    }
+  }, [date, sportType]);
+
+  return {
+    slots,
+    loading,
+    error,
+    refetch: refetchSlots,
+  };
+}
 
   // Generate all possible time slots
   const generateAllSlots = () => {
