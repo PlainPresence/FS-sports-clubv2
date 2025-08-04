@@ -41,30 +41,32 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
     // Parse the raw body as JSON for business logic
     const event = JSON.parse(payload.toString('utf8'));
     console.log('Webhook event received:', JSON.stringify(event, null, 2));
-    
+
     // Check for both event types: PAYMENT_SUCCESS and PAYMENT_SUCCESS_WEBHOOK
     if ((event.event && event.event === 'PAYMENT_SUCCESS') || 
         (event.type && event.type === 'PAYMENT_SUCCESS_WEBHOOK')) {
       console.log('Processing PAYMENT_SUCCESS event');
       const payment = event.data && event.data.payment;
       const order = event.data && event.data.order;
-      
+
       console.log('Payment data:', payment);
       console.log('Order data:', order);
-      
+
       if (!payment || !order) {
         console.error('Invalid webhook payload', event);
         return res.status(400).json({ error: 'Invalid webhook payload' });
       }
-      
+
       // Defensive extraction of slot info
       let slotInfo = order.order_meta?.notes || {};
       let finalSlotInfo = slotInfo;
+      console.log('Slot info from order_meta.notes:', slotInfo);
       if (!slotInfo.date || !slotInfo.timeSlots || !slotInfo.sportType) {
         try {
           const tempBookingDoc = await firestore.collection('tempBookings').doc(order.order_id).get();
           if (tempBookingDoc.exists) {
             const tempData = tempBookingDoc.data();
+            console.log('Found tempBookingDoc:', tempData);
             finalSlotInfo = {
               date: tempData?.date || new Date().toISOString().split('T')[0],
               timeSlots: tempData?.timeSlots || ['10:00-11:00'],
@@ -74,28 +76,31 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
             };
             await firestore.collection('tempBookings').doc(order.order_id).delete();
           } else {
+            console.error('No tempBookingDoc found for order_id:', order.order_id);
             finalSlotInfo = {
-              date: new Date().toISOString().split('T')[0],
-              timeSlots: ['10:00-11:00'],
-              sportType: 'cricket',
+              date: null,
+              timeSlots: null,
+              sportType: null,
               bookingId: order.order_id,
             };
           }
         } catch (error) {
+          console.error('Error fetching tempBookingDoc:', error);
           finalSlotInfo = {
-            date: new Date().toISOString().split('T')[0],
-            timeSlots: ['10:00-11:00'],
-            sportType: 'cricket',
+            date: null,
+            timeSlots: null,
+            sportType: null,
             bookingId: order.order_id,
           };
         }
       }
       // Defensive: If still missing, abort with error
-      if (!finalSlotInfo.date || !finalSlotInfo.sportType) {
-        console.error('Missing date or sportType for booking creation', finalSlotInfo);
-        return res.status(400).json({ error: 'Missing date or sportType for booking creation' });
+      if (!finalSlotInfo.date || !finalSlotInfo.sportType || !finalSlotInfo.timeSlots) {
+        console.error('Missing date, sportType, or timeSlots for booking creation', finalSlotInfo);
+        return res.status(400).json({ error: 'Missing date, sportType, or timeSlots for booking creation', details: finalSlotInfo });
       }
       // Check if booking already exists for this orderId (inside transaction)
+      let bookingData: any = null;
       await firestore.runTransaction(async (transaction) => {
         const existing = await transaction.get(
           firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id)
@@ -123,7 +128,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
         }
         // Ensure we have minimum required data for booking
-        const bookingData = {
+        bookingData = {
           cashfreeOrderId: order.order_id,
           cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
           cashfreePaymentStatus: payment.payment_status,
@@ -141,23 +146,24 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         console.log('Booking data to save:', bookingData);
         const bookingRef = firestore.collection('bookings').doc();
         transaction.set(bookingRef, bookingData);
+
+        // Update slot availability in real-time inside the transaction
+        if (bookingData.date && bookingData.timeSlots && bookingData.sportType) {
+          const timeSlots = Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots : [bookingData.timeSlots];
+          for (const timeSlot of timeSlots) {
+            const slotAvailabilityRef = firestore.collection('slotAvailability').doc();
+            transaction.set(slotAvailabilityRef, {
+              date: bookingData.date,
+              sportType: bookingData.sportType,
+              timeSlot: timeSlot,
+              status: 'booked',
+              bookingId: bookingData.bookingId || bookingData.cashfreeOrderId,
+              lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
       });
       console.log('Booking created successfully in Firebase (transaction)');
-      
-      // Update slot availability in real-time
-      if (bookingData.date && bookingData.timeSlots && bookingData.sportType) {
-        const timeSlots = Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots : [bookingData.timeSlots];
-        for (const timeSlot of timeSlots) {
-          await firestore.collection('slotAvailability').add({
-            date: bookingData.date,
-            sportType: bookingData.sportType,
-            timeSlot: timeSlot,
-            status: 'booked',
-            bookingId: bookingData.bookingId || bookingData.cashfreeOrderId,
-            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
-          });
-        }
-      }
       
       return res.status(200).json({ message: 'Booking created' });
     } else {
