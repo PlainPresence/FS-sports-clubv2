@@ -36,20 +36,20 @@ export const useSlots = (date: string, sportType: string) => {
     slotsRef.current = slots;
   }, [slots]);
 
-  // Consistent time format conversion
+  // Format hour to match Firebase format (e.g., "12" for 12, "01" for 1)
   const to12Hour = (hour: number): string => {
-    if (hour === 0) return '12:00 AM';
-    if (hour < 12) return `${hour}:00 AM`;
-    if (hour === 12) return '12:00 PM';
-    return `${hour - 12}:00 PM`;
+    if (hour === 0) return '12 AM';
+    if (hour < 12) return `${hour.toString().padStart(2, '0')} AM`;
+    if (hour === 12) return '12 PM';
+    return `${(hour - 12).toString().padStart(2, '0')} PM`;
   };
 
-  // Convert 24-hour format to 12-hour display format
+  // Convert time format to match Firebase format
   const convertTimeFormat = (timeSlot: string): string => {
     const [start, end] = timeSlot.split('-').map(t => t.trim());
     const startHour = parseInt(start.split(':')[0], 10);
     const endHour = parseInt(end.split(':')[0], 10);
-    return `${to12Hour(startHour)} - ${to12Hour(endHour)}`;
+    return `${to12Hour(startHour).split(' ')[0]}:00 ${to12Hour(startHour).split(' ')[1]} - ${to12Hour(endHour).split(' ')[0]}:00 ${to12Hour(endHour).split(' ')[1]}`;
   };
 
   // Generate all possible time slots
@@ -59,14 +59,13 @@ export const useSlots = (date: string, sportType: string) => {
     const endHour = 24; // End of day
 
     for (let hour = startHour; hour < endHour; hour++) {
-      // Format for backend comparison (e.g., "12:00 AM-01:00 AM")
       const nextHour = (hour + 1) % 24;
-      const time = `${to12Hour(hour).split(':')[0]}:00 ${to12Hour(hour).split(' ')[1]}-${to12Hour(nextHour).split(':')[0]}:00 ${to12Hour(nextHour).split(' ')[1]}`;
       
-      // Format for display
-      const display = `${to12Hour(hour)} - ${to12Hour(nextHour)}`;
+      // Exactly match Firebase format: "12:00 AM - 01:00 AM"
+      const time = `${to12Hour(hour).split(' ')[0]}:00 ${to12Hour(hour).split(' ')[1]} - ${to12Hour(nextHour).split(' ')[0]}:00 ${to12Hour(nextHour).split(' ')[1]}`;
+      const display = time; // Use the same format for display
       
-      console.log(`Generated slot - time: ${time}, display: ${display}`);
+      console.log(`Generated slot - time: ${time}`);
       
       allSlots.push({
         time,
