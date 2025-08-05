@@ -110,36 +110,42 @@ export const useSlots = (date: string, sportType: string) => {
   // Listen for real-time slot updates using useWebSocket's options
   useWebSocket({
     onSlotUpdate: (data: any) => {
+      console.log('Received slot update:', data);
       if (data.date === dateRef.current && data.sportType === sportTypeRef.current) {
-        console.log('Received slot update:', data);
+        const updatedTimeSlot = convertTimeFormat(data.timeSlot);
+        console.log('Updating slot:', updatedTimeSlot, 'Status:', data.status);
         
-        // Normalize backend bookedSlots to display format for comparison
-        const bookedSlotsDisplay = (data.bookedSlots || []).map((slot: string) => {
-          if (/AM|PM/.test(slot)) return slot;
-          return convertTimeFormat(slot);
-        });
-
-        console.log('Normalized booked slots:', bookedSlotsDisplay);
-
-        setSlots(slotsRef.current.map(slot => {
-          const isBooked = bookedSlotsDisplay.includes(slot.display);
-          console.log(`Slot ${slot.display}: isBooked=${isBooked}`);
-          return {
-            ...slot,
-            booked: isBooked,
-            available: !isBooked && !slot.blocked,
-          };
+        setSlots(prevSlots => prevSlots.map(slot => {
+          if (slot.display === updatedTimeSlot) {
+            return {
+              ...slot,
+              booked: data.status === 'booked',
+              blocked: data.status === 'blocked',
+              available: data.status === 'available'
+            };
+          }
+          return slot;
         }));
       }
     },
     onSlotBlocked: (data: any) => {
       if (data.date === dateRef.current && data.sportType === sportTypeRef.current) {
-        fetchSlotAvailability(); // Refetch all slots to get the latest status
+        const blockedTimeSlot = convertTimeFormat(data.timeSlot);
+        setSlots(prevSlots => prevSlots.map(slot => {
+          if (slot.display === blockedTimeSlot) {
+            return {
+              ...slot,
+              blocked: true,
+              available: false
+            };
+          }
+          return slot;
+        }));
       }
     },
     onSystemMessage: (data: any) => {
-      // Handle system messages if needed
-    },
+      console.log('System message received:', data);
+    }
   });
 
   // Fetch slots when date or sportType changes
