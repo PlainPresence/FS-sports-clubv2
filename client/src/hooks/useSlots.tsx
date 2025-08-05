@@ -1,44 +1,3 @@
-
-
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWebSocket } from './useWebSocket';
-
-export interface SlotInfo {
-  time: string;
-  display: string;
-  available: boolean;
-  booked: boolean;
-  blocked: boolean;
-}
-
-      const display = formatSlot(hour);
-      allSlots.push({
-        time,
-        display,
-        available: true,
-        booked: false,
-        blocked: false,
-      });
-    }
-    
-    return allSlots;
-  };
-
-  // Fetch slot availability from backend
-  const fetchSlotAvailability = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/slots/availability?date=${date}&sportType=${sportType}`);
-      const data = await response.json();
-      if (data.success) {
-        // Collect booked and blocked slots in display format for comparison
-        const bookedSlotsDisplay = (data.slots || [])
-          .filter((slot: SlotAvailability) => slot.status === 'booked')
-          .map((slot: SlotAvailability) => {
-            // Convert slot.timeSlot (e.g. '00:00-01:00') to display format
-            const [start, end] = slot.timeSlot.split('-');
-
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocket } from './useWebSocket';
 
@@ -204,17 +163,6 @@ export const useSlots = (date: string, sportType: string) => {
   const refetchSlots = useCallback(() => {
     if (date && sportType) {
       console.log('Refetching slots for:', date, sportType);
-      fetchSlotAvailability();
-    }
-  }, [date, sportType]);
-
-  return {
-    slots,
-    loading,
-    error,
-    refetch: refetchSlots,
-  };
-};
       fetchSlotAvailability();
     }
   }, [date, sportType]);
