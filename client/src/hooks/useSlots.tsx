@@ -79,17 +79,14 @@ export const useSlots = (date: string, sportType: string) => {
       const response = await fetch(`/api/slots/availability?date=${date}&sportType=${sportType}`);
       const data = await response.json();
       if (data.success) {
-        // Collect booked and blocked slots in display format for comparison
+        // Filter slots by selected date and sportType before mapping
         const bookedSlotsDisplay = (data.slots || [])
-          .filter((slot: SlotAvailability) => slot.status === 'booked')
+          .filter((slot: SlotAvailability) => slot.status === 'booked' && slot.date === date && slot.sportType === sportType)
           .map((slot: SlotAvailability) => convertTimeFormat(slot.timeSlot));
 
         const blockedSlotsDisplay = (data.slots || [])
-          .filter((slot: SlotAvailability) => slot.status === 'blocked')
+          .filter((slot: SlotAvailability) => slot.status === 'blocked' && slot.date === date && slot.sportType === sportType)
           .map((slot: SlotAvailability) => convertTimeFormat(slot.timeSlot));
-
-        console.log('Booked slots:', bookedSlotsDisplay);
-        console.log('Blocked slots:', blockedSlotsDisplay);
 
         const allSlots = generateAllSlots();
         const updatedSlots = allSlots.map(slot => ({
@@ -98,8 +95,6 @@ export const useSlots = (date: string, sportType: string) => {
           blocked: blockedSlotsDisplay.includes(slot.display),
           available: !bookedSlotsDisplay.includes(slot.display) && !blockedSlotsDisplay.includes(slot.display),
         }));
-
-        console.log('Updated slots:', updatedSlots);
         setSlots(updatedSlots);
       } else {
         setError(data.error || 'Failed to fetch slot availability');
