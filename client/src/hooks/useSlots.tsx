@@ -36,20 +36,31 @@ export const useSlots = (date: string, sportType: string) => {
     slotsRef.current = slots;
   }, [slots]);
 
+  // Consistent time format conversion
+  const to12Hour = (hour: number): string => {
+    if (hour === 0) return '12:00 AM';
+    if (hour < 12) return `${hour}:00 AM`;
+    if (hour === 12) return '12:00 PM';
+    return `${hour - 12}:00 PM`;
+  };
+
+  // Convert 24-hour format to 12-hour display format
+  const convertTimeFormat = (timeSlot: string): string => {
+    const [start, end] = timeSlot.split('-').map(t => t.trim());
+    const startHour = parseInt(start.split(':')[0], 10);
+    const endHour = parseInt(end.split(':')[0], 10);
+    return `${to12Hour(startHour)} - ${to12Hour(endHour)}`;
+  };
+
   // Generate all possible time slots
   const generateAllSlots = () => {
     const allSlots: SlotInfo[] = [];
     const startHour = 0; // Midnight
     const endHour = 24; // End of day
-    function formatSlot(hour: number) {
-      const start = new Date(0, 0, 0, hour, 0, 0);
-      const end = new Date(0, 0, 0, hour + 1, 0, 0);
-      const options = { hour: 'numeric', minute: '2-digit', hour12: true } as const;
-      return `${start.toLocaleTimeString([], options)} - ${end.toLocaleTimeString([], options)}`;
-    }
+
     for (let hour = startHour; hour < endHour; hour++) {
       const time = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
-      const display = formatSlot(hour);
+      const display = `${to12Hour(hour)} - ${to12Hour((hour + 1) % 24)}`;
       allSlots.push({
         time,
         display,
@@ -71,32 +82,15 @@ export const useSlots = (date: string, sportType: string) => {
         // Collect booked and blocked slots in display format for comparison
         const bookedSlotsDisplay = (data.slots || [])
           .filter((slot: SlotAvailability) => slot.status === 'booked')
-          .map((slot: SlotAvailability) => {
-            const [start, end] = slot.timeSlot.split('-');
-            const to12h = (t: string) => {
-              const [h, m] = t.split(':');
-              let hour = parseInt(h, 10);
-              const ampm = hour >= 12 ? 'PM' : 'AM';
-              hour = hour % 12;
-              if (hour === 0) hour = 12;
-              return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
-            };
-            return `${to12h(start)} - ${to12h(end)}`;
-          });
+          .map((slot: SlotAvailability) => convertTimeFormat(slot.timeSlot));
+
         const blockedSlotsDisplay = (data.slots || [])
           .filter((slot: SlotAvailability) => slot.status === 'blocked')
-          .map((slot: SlotAvailability) => {
-            const [start, end] = slot.timeSlot.split('-');
-            const to12h = (t: string) => {
-              const [h, m] = t.split(':');
-              let hour = parseInt(h, 10);
-              const ampm = hour >= 12 ? 'PM' : 'AM';
-              hour = hour % 12;
-              if (hour === 0) hour = 12;
-              return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
-            };
-            return `${to12h(start)} - ${to12h(end)}`;
-          });
+          .map((slot: SlotAvailability) => convertTimeFormat(slot.timeSlot));
+
+        console.log('Booked slots:', bookedSlotsDisplay);
+        console.log('Blocked slots:', blockedSlotsDisplay);
+
         const allSlots = generateAllSlots();
         const updatedSlots = allSlots.map(slot => ({
           ...slot,
@@ -104,11 +98,14 @@ export const useSlots = (date: string, sportType: string) => {
           blocked: blockedSlotsDisplay.includes(slot.display),
           available: !bookedSlotsDisplay.includes(slot.display) && !blockedSlotsDisplay.includes(slot.display),
         }));
+
+        console.log('Updated slots:', updatedSlots);
         setSlots(updatedSlots);
       } else {
         setError(data.error || 'Failed to fetch slot availability');
       }
     } catch (err) {
+      console.error('Error fetching slots:', err);
       setError('Failed to fetch slot availability');
     } finally {
       setLoading(false);
@@ -120,22 +117,18 @@ export const useSlots = (date: string, sportType: string) => {
     onSlotUpdate: (data: any) => {
       if (data.date === dateRef.current && data.sportType === sportTypeRef.current) {
         console.log('Received slot update:', data);
+        
         // Normalize backend bookedSlots to display format for comparison
         const bookedSlotsDisplay = (data.bookedSlots || []).map((slot: string) => {
-          if (/AM|PM|am|pm/.test(slot)) return slot;
-          const [start, end] = slot.split('-');
-          const to12h = (t: string) => {
-            const [h, m] = t.split(':');
-            let hour = parseInt(h, 10);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            hour = hour % 12;
-            if (hour === 0) hour = 12;
-            return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
-          };
-          return `${to12h(start)} - ${to12h(end)}`;
+          if (/AM|PM/.test(slot)) return slot;
+          return convertTimeFormat(slot);
         });
+
+        console.log('Normalized booked slots:', bookedSlotsDisplay);
+
         setSlots(slotsRef.current.map(slot => {
           const isBooked = bookedSlotsDisplay.includes(slot.display);
+          console.log(`Slot ${slot.display}: isBooked=${isBooked}`);
           return {
             ...slot,
             booked: isBooked,
@@ -145,16 +138,19 @@ export const useSlots = (date: string, sportType: string) => {
       }
     },
     onSlotBlocked: (data: any) => {
-      // Optionally handle slot blocked events
+      if (data.date === dateRef.current && data.sportType === sportTypeRef.current) {
+        fetchSlotAvailability(); // Refetch all slots to get the latest status
+      }
     },
     onSystemMessage: (data: any) => {
-      // Optionally handle system messages
+      // Handle system messages if needed
     },
   });
 
   // Fetch slots when date or sportType changes
   useEffect(() => {
     if (date && sportType) {
+      console.log(`Fetching slots for date: ${date}, sport: ${sportType}`);
       fetchSlotAvailability();
     }
   }, [date, sportType]);
@@ -162,7 +158,7 @@ export const useSlots = (date: string, sportType: string) => {
   // Expose refetch function for external use
   const refetchSlots = useCallback(() => {
     if (date && sportType) {
-      console.log('Refetching slots for:', date, sportType);
+      console.log('Manually refetching slots for:', date, sportType);
       fetchSlotAvailability();
     }
   }, [date, sportType]);
