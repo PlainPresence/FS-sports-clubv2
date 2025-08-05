@@ -59,8 +59,15 @@ export const useSlots = (date: string, sportType: string) => {
     const endHour = 24; // End of day
 
     for (let hour = startHour; hour < endHour; hour++) {
-      const time = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
-      const display = `${to12Hour(hour)} - ${to12Hour((hour + 1) % 24)}`;
+      // Format for backend comparison (e.g., "12:00 AM-01:00 AM")
+      const nextHour = (hour + 1) % 24;
+      const time = `${to12Hour(hour).split(':')[0]}:00 ${to12Hour(hour).split(' ')[1]}-${to12Hour(nextHour).split(':')[0]}:00 ${to12Hour(nextHour).split(' ')[1]}`;
+      
+      // Format for display
+      const display = `${to12Hour(hour)} - ${to12Hour(nextHour)}`;
+      
+      console.log(`Generated slot - time: ${time}, display: ${display}`);
+      
       allSlots.push({
         time,
         display,
@@ -79,43 +86,44 @@ export const useSlots = (date: string, sportType: string) => {
       const response = await fetch(`/api/slots/availability?date=${date}&sportType=${sportType}`);
       const data = await response.json();
       if (data.success) {
-        // Log the raw data from backend
         console.log('Raw backend data:', data.slots);
         
-        // Filter slots by selected date and sportType
-        const bookedSlots = (data.slots || [])
-          .filter((slot: SlotAvailability) => 
-            (slot.status === 'booked' || slot.status === 'confirmed') && 
-            slot.date === date && 
-            slot.sportType === sportType
-          );
-        
-        console.log('Filtered booked slots:', bookedSlots);
-        
-        // Map the slots to our display format
-        const bookedSlotsDisplay = bookedSlots.map((slot: SlotAvailability) => {
-          const displayTime = slot.timeSlot;
-          console.log('Processing slot:', slot.timeSlot, '-> display time:', displayTime);
-          return displayTime;
-        });
+        // Get booked and confirmed slots
+        const bookedSlotsDisplay = (data.slots || [])
+          .filter((slot: SlotAvailability) => {
+            const isRelevantStatus = slot.status === 'booked' || slot.status === 'confirmed';
+            const isMatchingDate = slot.date === date;
+            const isMatchingSport = slot.sportType === sportType;
+            console.log(`Slot ${slot.timeSlot}: status=${slot.status}, matchDate=${isMatchingDate}, matchSport=${isMatchingSport}`);
+            return isRelevantStatus && isMatchingDate && isMatchingSport;
+          })
+          .map((slot: SlotAvailability) => slot.timeSlot);
+
+        console.log('Booked slots to check:', bookedSlotsDisplay);
 
         const blockedSlotsDisplay = (data.slots || [])
           .filter((slot: SlotAvailability) => slot.status === 'blocked' && slot.date === date && slot.sportType === sportType)
           .map((slot: SlotAvailability) => slot.timeSlot);
 
         const allSlots = generateAllSlots();
-        console.log('All slots:', allSlots);
-        console.log('Booked slots to check:', bookedSlotsDisplay);
+        console.log('Generated all slots:', allSlots);
         
         const updatedSlots = allSlots.map(slot => {
-          const isBooked = bookedSlotsDisplay.some(bookedSlot => 
-            bookedSlot.toLowerCase() === slot.display.toLowerCase()
-          );
-          const isBlocked = blockedSlotsDisplay.some(blockedSlot => 
-            blockedSlot.toLowerCase() === slot.display.toLowerCase()
+          // Convert the backend time format to match our display format
+          const backendFormat = slot.time; // e.g., "00:00-01:00"
+          
+          // Check if this slot is booked
+          const isBooked = bookedSlotsDisplay.some((bookedSlot: string) => {
+            console.log(`Comparing slot.time: ${slot.time} with bookedSlot: ${bookedSlot}`);
+            return bookedSlot === slot.time;
+          });
+          
+          // Check if this slot is blocked
+          const isBlocked = blockedSlotsDisplay.some((blockedSlot: string) => 
+            blockedSlot === slot.time
           );
           
-          console.log(`Slot ${slot.display}: isBooked=${isBooked}, isBlocked=${isBlocked}`);
+          console.log(`Slot ${slot.display} (${slot.time}): isBooked=${isBooked}, isBlocked=${isBlocked}`);
           
           return {
             ...slot,
@@ -124,6 +132,8 @@ export const useSlots = (date: string, sportType: string) => {
             available: !isBooked && !isBlocked,
           };
         });
+        
+        console.log('Final updated slots:', updatedSlots);
         setSlots(updatedSlots);
       } else {
         setError(data.error || 'Failed to fetch slot availability');
