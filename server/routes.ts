@@ -133,8 +133,37 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         const normalizedTimeSlotsArr: string[] = timeSlotsArr.map(normalizeTimeSlot);
         
         // Don't check for double booking if this is a tournament booking
-        if (finalSlotInfo.tournamentId && timeSlotsArr.includes('Tournament')) {
+        if (finalSlotInfo.tournamentId || finalSlotInfo.bookingType === 'tournament') {
           console.log('Skipping double booking check for tournament booking');
+          
+          // Update tournament slots
+          try {
+            // Get tournament reference and check slots
+            const tournamentQuery = await transaction.get(
+              firestore.collection("tournaments").doc(finalSlotInfo.tournamentId)
+            );
+            
+            if (!tournamentQuery.exists) {
+              throw new Error('Tournament not found');
+            }
+            
+            const tournamentData = tournamentQuery.data();
+            const currentSlots = tournamentData?.remainingSlots || 0;
+            
+            if (currentSlots > 0) {
+              // Decrement remaining slots
+              transaction.update(tournamentQuery.ref, {
+                remainingSlots: currentSlots - 1,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              });
+              console.log(`Updated tournament slots. New remaining slots: ${currentSlots - 1}`);
+            } else {
+              throw new Error('No slots available for this tournament');
+            }
+          } catch (error) {
+            console.error('Error updating tournament slots:', error);
+            throw error;
+          }
         } else {
           // Regular booking - check for conflicts
           console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
@@ -158,12 +187,12 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           }
         }
         // Ensure we have minimum required data for booking
-        const isTournamentBooking = Boolean(finalSlotInfo.tournamentId);
+        const isTournamentBooking = Boolean(finalSlotInfo.tournamentId || finalSlotInfo.bookingType === 'tournament');
         bookingData = {
           cashfreeOrderId: order.order_id,
           cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
           cashfreePaymentStatus: payment.payment_status,
-          fullName: order.customer_details?.customer_name || event.data.customer_details?.customer_name,
+          fullName: finalSlotInfo.captainName || order.customer_details?.customer_name || event.data.customer_details?.customer_name,
           mobile: order.customer_details?.customer_phone || event.data.customer_details?.customer_phone,
           email: order.customer_details?.customer_email || event.data.customer_details?.customer_email,
           amount: order.order_amount,
@@ -172,13 +201,22 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           bookingType: isTournamentBooking ? 'tournament' : 'regular',
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          ...finalSlotInfo,
-          // If it's a tournament booking, make sure all tournament-specific fields are set
+          
+          // Base properties
+          date: finalSlotInfo.date,
+          sportType: finalSlotInfo.sportType,
           timeSlots: isTournamentBooking ? ['Tournament'] : normalizedTimeSlotsArr,
+          
+          // Tournament-specific fields
           ...(isTournamentBooking ? {
             tournamentId: finalSlotInfo.tournamentId,
             tournamentName: finalSlotInfo.tournamentName || 'Tournament',
-            tournamentBookingId: order.order_id
+            tournamentBookingId: order.order_id,
+            teamName: finalSlotInfo.teamName,
+            captainName: finalSlotInfo.captainName,
+            teamMembers: finalSlotInfo.teamMembers || [],
+            captainMobile: finalSlotInfo.captainMobile || order.customer_details?.customer_phone,
+            captainEmail: finalSlotInfo.captainEmail || order.customer_details?.customer_email
           } : {})
         };
         console.log('Booking data to save:', bookingData);
