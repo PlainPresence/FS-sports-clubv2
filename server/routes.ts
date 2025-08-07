@@ -131,23 +131,31 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         const timeSlotsArr: string[] = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
         // Normalize all time slots for this booking
         const normalizedTimeSlotsArr: string[] = timeSlotsArr.map(normalizeTimeSlot);
-        console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
-        const existingBookings = await transaction.get(
-          firestore.collection('bookings')
-            .where('date', '==', finalSlotInfo.date)
-            .where('sportType', '==', finalSlotInfo.sportType)
-            .where('paymentStatus', '==', 'success')
-        );
-        const bookedSlots: string[] = existingBookings.docs.flatMap(doc => {
-          const data = doc.data();
-          console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
-          const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
-          return slots.map(normalizeTimeSlot);
-        });
-        const conflictingSlots: string[] = normalizedTimeSlotsArr.filter((slot: string) => bookedSlots.includes(slot));
-        if (conflictingSlots.length > 0) {
-          console.log('Double booking detected for slots:', conflictingSlots, 'on date:', finalSlotInfo.date);
-          throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
+        
+        // Don't check for double booking if this is a tournament booking
+        if (finalSlotInfo.tournamentId && timeSlotsArr.includes('Tournament')) {
+          console.log('Skipping double booking check for tournament booking');
+        } else {
+          // Regular booking - check for conflicts
+          console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
+          const existingBookings = await transaction.get(
+            firestore.collection('bookings')
+              .where('date', '==', finalSlotInfo.date)
+              .where('sportType', '==', finalSlotInfo.sportType)
+              .where('paymentStatus', '==', 'success')
+              .where('bookingType', '==', 'regular') // Only check conflicts with regular bookings
+          );
+          const bookedSlots: string[] = existingBookings.docs.flatMap(doc => {
+            const data = doc.data();
+            console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
+            const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
+            return slots.map(normalizeTimeSlot);
+          });
+          const conflictingSlots: string[] = normalizedTimeSlotsArr.filter((slot: string) => bookedSlots.includes(slot));
+          if (conflictingSlots.length > 0) {
+            console.log('Double booking detected for slots:', conflictingSlots, 'on date:', finalSlotInfo.date);
+            throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
+          }
         }
         // Ensure we have minimum required data for booking
         bookingData = {
