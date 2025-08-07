@@ -385,8 +385,12 @@ export const createTournamentBooking = async (bookingData: any) => {
 
 export const getTournamentBookings = async (filters?: { tournamentId?: string; status?: string }) => {
   try {
-    const bookingsRef = collection(db, "tournamentBookings");
-    let q = query(bookingsRef, orderBy("bookingDate", "desc"));
+    const bookingsRef = collection(db, "bookings");
+    let q = query(
+      bookingsRef,
+      where("bookingType", "==", "tournament"),
+      orderBy("createdAt", "desc")
+    );
     
     if (filters?.tournamentId) {
       q = query(q, where("tournamentId", "==", filters.tournamentId));
@@ -403,7 +407,7 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
       bookings.push({
         id: doc.id,
         ...doc.data(),
-        bookingDate: doc.data().bookingDate?.toDate(),
+        bookingDate: doc.data().createdAt?.toDate(),
       });
     });
     
