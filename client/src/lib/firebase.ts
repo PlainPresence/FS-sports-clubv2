@@ -389,6 +389,7 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
     let q = query(
       bookingsRef,
       where("bookingType", "==", "tournament"),
+      where("paymentStatus", "==", "success"), // Only get successful payments
       orderBy("createdAt", "desc")
     );
     
@@ -404,10 +405,20 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
     
     const bookings: any[] = [];
     querySnapshot.forEach((doc) => {
+      const data = doc.data();
       bookings.push({
         id: doc.id,
-        ...doc.data(),
-        bookingDate: doc.data().createdAt?.toDate(),
+        ...data,
+        bookingDate: data.createdAt?.toDate(),
+        bookingId: data.bookingId || data.cashfreeOrderId, // Use either bookingId or cashfreeOrderId
+        teamName: data.teamName || data.fullName, // Use either teamName or fullName
+        tournamentId: data.tournamentId,
+        tournamentName: data.tournamentName,
+        amount: data.amount,
+        paymentStatus: data.paymentStatus,
+        bookingType: data.bookingType,
+        status: data.status || 'confirmed',
+        createdAt: data.createdAt?.toDate()
       });
     });
     
@@ -420,8 +431,11 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
 
 export const updateTournamentBooking = async (bookingId: string, updates: any) => {
   try {
-    const bookingRef = doc(db, "tournamentBookings", bookingId);
-    await updateDoc(bookingRef, updates);
+    const bookingRef = doc(db, "bookings", bookingId);
+    await updateDoc(bookingRef, {
+      ...updates,
+      updatedAt: Timestamp.now()
+    });
     
     return { success: true };
   } catch (error: any) {
