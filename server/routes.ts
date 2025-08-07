@@ -158,6 +158,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           }
         }
         // Ensure we have minimum required data for booking
+        const isTournamentBooking = Boolean(finalSlotInfo.tournamentId);
         bookingData = {
           cashfreeOrderId: order.order_id,
           cashfreePaymentId: payment.cf_payment_id || payment.payment_id,
@@ -167,12 +168,18 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           email: order.customer_details?.customer_email || event.data.customer_details?.customer_email,
           amount: order.order_amount,
           paymentStatus: 'success',
-          bookingType: finalSlotInfo.tournamentId ? 'tournament' : 'regular',
           status: 'confirmed',
+          bookingType: isTournamentBooking ? 'tournament' : 'regular',
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...finalSlotInfo,
-          timeSlots: normalizedTimeSlotsArr // Always store normalized time slots
+          // If it's a tournament booking, make sure all tournament-specific fields are set
+          timeSlots: isTournamentBooking ? ['Tournament'] : normalizedTimeSlotsArr,
+          ...(isTournamentBooking ? {
+            tournamentId: finalSlotInfo.tournamentId,
+            tournamentName: finalSlotInfo.tournamentName || 'Tournament',
+            tournamentBookingId: order.order_id
+          } : {})
         };
         console.log('Booking data to save:', bookingData);
         const bookingRef = firestore.collection('bookings').doc();
