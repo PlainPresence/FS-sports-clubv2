@@ -45,8 +45,20 @@ export interface AdminUser {
   email: string;
 }
 
+export interface TournamentBooking extends Omit<BookingData, 'timeSlots' | 'facilityTypes'> {
+  tournamentId: string;
+  tournamentName: string;
+  teamName: string;
+  captainName: string;
+  captainMobile: string;
+  captainEmail?: string;
+  teamMembers: string[];
+  bookingType: 'tournament';
+  timeSlots: ['Tournament'];
+}
+
 export interface Tournament {
-  id: string;
+  id?: string;
   name: string;
   description: string;
   sportType: string;
