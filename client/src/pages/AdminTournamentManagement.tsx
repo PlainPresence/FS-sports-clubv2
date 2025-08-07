@@ -500,10 +500,10 @@ export default function AdminTournamentManagement() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h4 className="font-semibold text-gray-900">{booking.teamName}</h4>
-                      <p className="text-sm text-gray-600">Captain: {booking.captainName}</p>
+                      <p className="text-sm text-gray-600">Tournament: {booking.tournamentName}</p>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      booking.paymentStatus === 'success' ? 'bg-green-100 text-green-800' :
+                      booking.cashfreePaymentStatus === 'SUCCESS' ? 'bg-green-100 text-green-800' :
                       booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                       'bg-gray-100 text-gray-700'
                     }`}>
@@ -511,20 +511,33 @@ export default function AdminTournamentManagement() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600 mb-2">
-                    <p>Tournament: {booking.tournamentId}</p>
+                    <p>Name: {booking.fullName}</p>
+                    <p>Mobile: {booking.mobile}</p>
                     <p>Amount: ₹{booking.amount}</p>
-                    <p>Booking ID: {booking.id}</p>
-                    <p>Date: {new Date(booking.bookingDate).toLocaleDateString()}</p>
+                    <p>Booking ID: {booking.bookingId}</p>
+                    <p>Payment ID: {booking.cashfreePaymentId}</p>
+                    <p>Date: {new Date(booking.createdAt?.seconds * 1000).toLocaleString()}</p>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    <p>Team Members: {booking.teamMembers.join(', ')}</p>
-                  </div>
+                  {booking.teamMembers && booking.teamMembers.length > 0 && (
+                    <div className="text-sm text-gray-500">
+                      <p>Team Members: {booking.teamMembers.filter(Boolean).join(', ')}</p>
+                    </div>
+                  )}
                   {booking.status !== 'cancelled' && (
                     <div className="flex space-x-2 mt-2">
                       <Button
                         size="sm"
+                        variant="outline"
+                        onClick={() => handleUpdateBookingStatus(booking.id, 'confirmed')}
+                        disabled={booking.status === 'confirmed'}
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
-                        onClick={() => handleCancelTournamentBooking(booking)}
+                        onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
+                        disabled={booking.status === 'cancelled'}
                       >
                         Cancel
                       </Button>
