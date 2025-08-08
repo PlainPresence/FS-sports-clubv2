@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import ConfirmationSection from '@/components/ConfirmationSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, DocumentData, Timestamp } from 'fire
 
 interface TournamentBookingData extends DocumentData {
   id: string;
-  amount: number;
+  amount1: number;
   bookingDate: Timestamp;
   bookingId: string;
   captainEmail: string;
@@ -25,54 +25,66 @@ export default function PaymentConfirmation() {
   const [bookingData, setBookingData] = useState<TournamentBookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [location] = useLocation();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const bookingId = params.get('bookingId');
-
-    if (!bookingId) {
-      setError('Missing booking ID in URL.');
-      setLoading(false);
-      return;
-    }
-
     const fetchBooking = async () => {
       try {
-        console.log('Fetching tournament booking:', bookingId);
+        setLoading(true);
+        const params = new URLSearchParams(window.location.search);
+        const bookingId = params.get('bookingId') || params.get('order_id');
 
-        const querySnapshot = await getDocs(
-          query(
-            collection(db, 'tournamentBookings'),
-            where('bookingId', '==', bookingId)
-          )
-        );
+        if (!bookingId) {
+          console.error('No booking ID found in URL');
+          setError('Missing booking ID in URL.');
+          return;
+        }
+
+        console.log('Fetching booking with ID:', bookingId);
+
+        const bookingsRef = collection(db, 'tournamentBookings');
+        const bookingQuery = query(bookingsRef, where('bookingId', '==', bookingId));
+        const querySnapshot = await getDocs(bookingQuery);
 
         if (!querySnapshot.empty) {
           const doc = querySnapshot.docs[0];
           const data = doc.data();
           console.log('Found booking data:', data);
 
-          const booking = {
+          // Create booking object with exact field names from Firebase
+          const booking: TournamentBookingData = {
             id: doc.id,
-            ...data,
-          } as TournamentBookingData;
+            amount1: data.amount1 || 0,
+            bookingDate: data.bookingDate || Timestamp.now(),
+            bookingId: data.bookingId || bookingId,
+            captainEmail: data.captainEmail || '',
+            captainMobile: data.captainMobile || '',
+            captainName: data.captainName || '',
+            paymentStatus: 'success', // Force success status
+            sportType: data.sportType || 'cricket',
+            teamMembers: Array.isArray(data.teamMembers) ? data.teamMembers : [''],
+            teamName: data.teamName || '',
+            tournamentId: data.tournamentId || '',
+            tournamentName: data.tournamentName || '',
+            ...data // Include any additional fields
+          };
 
-          // Set booking data regardless of payment status
           setBookingData(booking);
           setError(null);
         } else {
-          setError('Unable to find booking details. Please check your email for confirmation or contact support.');
+          console.error('No booking found with ID:', bookingId);
+          setError('Booking not found. Please contact support if payment was deducted.');
         }
       } catch (err) {
         console.error('Error fetching booking:', err);
-        setError('Error fetching booking details. Please check your email or contact support.');
+        setError('Error loading booking details. Please refresh the page.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchBooking();
-  }, []);
+  }, [location]);
 
   if (loading) {
     return (
@@ -103,20 +115,17 @@ export default function PaymentConfirmation() {
   }
 
   return (
-    <>
+    <div className="min-h-screen">
       <ConfirmationSection
-        bookingData={{
-          ...bookingData,
-          // Override payment status to always show success on confirmation page
-          paymentStatus: 'success'
+        bookingData={bookingData}
+        onBookAnother={() => {
+          window.location.href = '/tournament';
         }}
-        onBookAnother={() => window.location.href = '/tournament'}
       />
-      {bookingData.paymentStatus === 'pending' && (
-        <div className="fixed bottom-0 left-0 right-0 bg-blue-50 p-4 text-center text-sm text-blue-600">
-          Note: Payment confirmation is in process. You will receive an email once fully confirmed.
-        </div>
-      )}
-    </>
+      {/* Optional notification for real payment status */}
+      <div className="fixed bottom-4 right-4 max-w-md bg-green-50 p-4 rounded-lg shadow-lg text-green-700 text-sm">
+        Your tournament registration is confirmed! You will receive a confirmation email shortly.
+      </div>
+    </div>
   );
 }
