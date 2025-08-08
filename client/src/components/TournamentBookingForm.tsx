@@ -131,6 +131,12 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
 
       console.log('Creating tournament booking with data:', bookingData);
 
+      // Create the tournament booking first
+      const createBookingResult = await createTournamentBooking(bookingData);
+      if (!createBookingResult.success) {
+        throw new Error(createBookingResult.error || 'Failed to create tournament booking');
+      }
+
       // 1. Create Cashfree payment session
       const sessionRes = await fetch('/api/cashfree/create-session', {
         method: 'POST',
