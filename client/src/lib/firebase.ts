@@ -15,12 +15,18 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// Safe string helper
+const safeString = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  return String(value);
+};
+
 export const loginAdmin = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return { success: true, user: userCredential.user };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Login failed' };
   }
 };
 
@@ -29,7 +35,7 @@ export const logoutAdmin = async () => {
     await signOut(auth);
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Logout failed' };
   }
 };
 
@@ -41,7 +47,7 @@ export const createBooking = async (bookingData: any) => {
     });
     return { success: true, id: docRef.id };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to create booking' };
   }
 };
 
@@ -50,7 +56,7 @@ export const getBookings = async (filters?: { date?: string; search?: string }) 
     let q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
     
     if (filters?.date) {
-      q = query(collection(db, "bookings"), where("date", "==", filters.date), orderBy("createdAt", "desc"));
+      q = query(collection(db, "bookings"), where("date", "==", safeString(filters.date)), orderBy("createdAt", "desc"));
     }
     
     const querySnapshot = await getDocs(q);
@@ -60,54 +66,58 @@ export const getBookings = async (filters?: { date?: string; search?: string }) 
     }));
 
     if (filters?.search) {
+      const searchTerm = safeString(filters.search).toLowerCase();
       return bookings.filter((booking: any) => 
-        booking.mobile?.includes(filters.search!) || 
-        booking.bookingId?.includes(filters.search!) ||
-        booking.fullName?.toLowerCase().includes(filters.search!.toLowerCase())
+        safeString(booking.mobile).includes(filters.search!) || 
+        safeString(booking.bookingId).includes(filters.search!) ||
+        safeString(booking.fullName).toLowerCase().includes(searchTerm)
       );
     }
 
     return bookings;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new Error(safeString(error?.message) || 'Failed to fetch bookings');
   }
 };
 
 export const updateBooking = async (bookingId: string, updates: Partial<{ amount: number; paymentStatus: string }>) => {
   try {
-    const bookingRef = doc(db, "bookings", bookingId);
+    const bookingRef = doc(db, "bookings", safeString(bookingId));
     await updateDoc(bookingRef, updates);
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to update booking' };
   }
 };
 
 export const getAvailableSlots = async (date: string, sportType: string) => {
   try {
+    const safeDate = safeString(date);
+    const safeSportType = safeString(sportType);
+    
     // Get existing bookings
     const bookingsQuery = query(
       collection(db, "bookings"),
-      where("date", "==", date),
-      where("sportType", "==", sportType),
+      where("date", "==", safeDate),
+      where("sportType", "==", safeSportType),
       where("paymentStatus", "==", "success")
     );
     const bookingsSnapshot = await getDocs(bookingsQuery);
-    const bookedSlots = bookingsSnapshot.docs.map((doc: any) => doc.data().timeSlot);
+    const bookedSlots = bookingsSnapshot.docs.map((doc: any) => safeString(doc.data().timeSlot));
 
     // Get blocked slots
     const blockedSlotsQuery = query(
       collection(db, "blockedSlots"),
-      where("date", "==", date),
-      where("sportType", "==", sportType)
+      where("date", "==", safeDate),
+      where("sportType", "==", safeSportType)
     );
     const blockedSlotsSnapshot = await getDocs(blockedSlotsQuery);
-    const blockedSlots = blockedSlotsSnapshot.docs.map((doc: any) => doc.data().timeSlot);
+    const blockedSlots = blockedSlotsSnapshot.docs.map((doc: any) => safeString(doc.data().timeSlot));
 
     // Get blocked dates
     const blockedDatesQuery = query(
       collection(db, "blockedDates"),
-      where("date", "==", date)
+      where("date", "==", safeDate)
     );
     const blockedDatesSnapshot = await getDocs(blockedDatesQuery);
     const isDateBlocked = !blockedDatesSnapshot.empty;
@@ -118,7 +128,7 @@ export const getAvailableSlots = async (date: string, sportType: string) => {
       isDateBlocked,
     };
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new Error(safeString(error?.message) || 'Failed to fetch available slots');
   }
 };
 
@@ -130,7 +140,7 @@ export const createBlockedSlot = async (slotData: any) => {
     });
     return { success: true, id: docRef.id };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to create blocked slot' };
   }
 };
 
@@ -142,13 +152,10 @@ export const createBlockedDate = async (dateData: any) => {
     });
     return { success: true, id: docRef.id };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to create blocked date' };
   }
 };
 
-// Slot Prices Management
-// Now supports arbitrary keys, including 'speedMeter' for add-ons
-// Example: updateSlotPrice('speedMeter', 100)
 export const getSlotPrices = async () => {
   try {
     const pricesSnapshot = await getDocs(collection(db, "slotPrices"));
@@ -161,28 +168,30 @@ export const getSlotPrices = async () => {
     });
     return prices;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new Error(safeString(error?.message) || 'Failed to fetch slot prices');
   }
 };
 
 export const updateSlotPrice = async (sport: string, price: number) => {
   try {
-    const priceRef = doc(db, "slotPrices", sport);
+    const safeSport = safeString(sport);
+    const priceRef = doc(db, "slotPrices", safeSport);
     await updateDoc(priceRef, { price });
     return { success: true };
   } catch (error: any) {
     // If doc doesn't exist, create it
-    if (error.code === 'not-found' || error.message?.includes('No document to update')) {
+    if (error.code === 'not-found' || safeString(error?.message).includes('No document to update')) {
       try {
-        await setDoc(doc(db, "slotPrices", sport), { price });
+        const safeSport = safeString(sport);
+        await setDoc(doc(db, "slotPrices", safeSport), { price });
         return { success: true };
       } catch (err: any) {
         console.error('Error creating slot price document:', err);
-        return { success: false, error: err.message || 'Failed to create price document' };
+        return { success: false, error: safeString(err?.message) || 'Failed to create price document' };
       }
     }
     console.error('Error updating slot price:', error);
-    return { success: false, error: error.message || 'Failed to update price' };
+    return { success: false, error: safeString(error?.message) || 'Failed to update price' };
   }
 };
 
@@ -193,17 +202,18 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
     
     await runTransaction(db, async (transaction) => {
       // For each slot, check if it is already booked
-      for (const slot of bookingData.timeSlots) {
+      const timeSlots = bookingData.timeSlots || [];
+      for (const slot of timeSlots) {
+        const safeSlot = safeString(slot);
         const slotQuery = query(
           bookingRef,
-          where("date", "==", bookingData.date),
-          where("sportType", "==", bookingData.sportType),
-          where("timeSlot", "==", slot),
+          where("date", "==", safeString(bookingData.date)),
+          where("sportType", "==", safeString(bookingData.sportType)),
+          where("timeSlot", "==", safeSlot),
           where("paymentStatus", "==", "success")
         );
         const slotSnapshot = await getDocs(slotQuery);
         if (!slotSnapshot.empty) {
-          // At least one slot is already booked
           result = { success: false, reason: "Slot already booked" };
           return;
         }
@@ -212,14 +222,14 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
       // Also check for blocked slots
       const blockedSlotsQuery = query(
         collection(db, "blockedSlots"),
-        where("date", "==", bookingData.date),
-        where("sportType", "==", bookingData.sportType)
+        where("date", "==", safeString(bookingData.date)),
+        where("sportType", "==", safeString(bookingData.sportType))
       );
       const blockedSlotsSnapshot = await getDocs(blockedSlotsQuery);
-      const blockedSlots = blockedSlotsSnapshot.docs.map(doc => doc.data().timeSlot);
+      const blockedSlots = blockedSlotsSnapshot.docs.map(doc => safeString(doc.data().timeSlot));
       
-      for (const slot of bookingData.timeSlots) {
-        if (blockedSlots.includes(slot)) {
+      for (const slot of timeSlots) {
+        if (blockedSlots.includes(safeString(slot))) {
           result = { success: false, reason: "Slot is blocked" };
           return;
         }
@@ -228,7 +238,7 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
       // Check for blocked dates
       const blockedDatesQuery = query(
         collection(db, "blockedDates"),
-        where("date", "==", bookingData.date)
+        where("date", "==", safeString(bookingData.date))
       );
       const blockedDatesSnapshot = await getDocs(blockedDatesQuery);
       if (!blockedDatesSnapshot.empty) {
@@ -248,7 +258,7 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
     return result;
   } catch (error: any) {
     console.error('Error in atomic booking creation:', error);
-    return { success: false, error: error.message || 'Booking creation failed' };
+    return { success: false, error: safeString(error?.message) || 'Booking creation failed' };
   }
 };
 
@@ -260,7 +270,7 @@ export const logFailedPayment = async (logData: any) => {
     });
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to log failed payment' };
   }
 };
 
@@ -290,7 +300,8 @@ export const getTournaments = async () => {
 
 export const getTournament = async (tournamentId: string) => {
   try {
-    const tournamentRef = doc(db, "tournaments", tournamentId);
+    const safeTournamentId = safeString(tournamentId);
+    const tournamentRef = doc(db, "tournaments", safeTournamentId);
     const tournamentDoc = await getDoc(tournamentRef);
     
     if (tournamentDoc.exists()) {
@@ -321,13 +332,14 @@ export const createTournament = async (tournamentData: any) => {
     return { success: true, id: docRef.id };
   } catch (error: any) {
     console.error('Error creating tournament:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to create tournament' };
   }
 };
 
 export const updateTournament = async (tournamentId: string, updates: any) => {
   try {
-    const tournamentRef = doc(db, "tournaments", tournamentId);
+    const safeTournamentId = safeString(tournamentId);
+    const tournamentRef = doc(db, "tournaments", safeTournamentId);
     await updateDoc(tournamentRef, {
       ...updates,
       updatedAt: Timestamp.now(),
@@ -336,13 +348,14 @@ export const updateTournament = async (tournamentId: string, updates: any) => {
     return { success: true };
   } catch (error: any) {
     console.error('Error updating tournament:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to update tournament' };
   }
 };
 
 export const updateTournamentSlots = async (tournamentId: string, remainingSlots: number) => {
   try {
-    const tournamentRef = doc(db, "tournaments", tournamentId);
+    const safeTournamentId = safeString(tournamentId);
+    const tournamentRef = doc(db, "tournaments", safeTournamentId);
     await updateDoc(tournamentRef, {
       remainingSlots,
       updatedAt: Timestamp.now(),
@@ -351,19 +364,20 @@ export const updateTournamentSlots = async (tournamentId: string, remainingSlots
     return { success: true };
   } catch (error: any) {
     console.error('Error updating tournament slots:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to update tournament slots' };
   }
 };
 
 export const deleteTournament = async (tournamentId: string) => {
   try {
-    const tournamentRef = doc(db, "tournaments", tournamentId);
+    const safeTournamentId = safeString(tournamentId);
+    const tournamentRef = doc(db, "tournaments", safeTournamentId);
     await deleteDoc(tournamentRef);
     
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting tournament:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to delete tournament' };
   }
 };
 
@@ -379,7 +393,7 @@ export const createTournamentBooking = async (bookingData: any) => {
     return { success: true, id: docRef.id };
   } catch (error: any) {
     console.error('Error creating tournament booking:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to create tournament booking' };
   }
 };
 
@@ -389,11 +403,11 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
     let q = query(bookingsRef, orderBy("bookingDate", "desc"));
     
     if (filters?.tournamentId) {
-      q = query(q, where("tournamentId", "==", filters.tournamentId));
+      q = query(q, where("tournamentId", "==", safeString(filters.tournamentId)));
     }
     
     if (filters?.status) {
-      q = query(q, where("status", "==", filters.status));
+      q = query(q, where("status", "==", safeString(filters.status)));
     }
     
     const querySnapshot = await getDocs(q);
@@ -416,12 +430,13 @@ export const getTournamentBookings = async (filters?: { tournamentId?: string; s
 
 export const updateTournamentBooking = async (bookingId: string, updates: any) => {
   try {
-    const bookingRef = doc(db, "tournamentBookings", bookingId);
+    const safeBookingId = safeString(bookingId);
+    const bookingRef = doc(db, "tournamentBookings", safeBookingId);
     await updateDoc(bookingRef, updates);
     
     return { success: true };
   } catch (error: any) {
     console.error('Error updating tournament booking:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: safeString(error?.message) || 'Failed to update tournament booking' };
   }
 };
