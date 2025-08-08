@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, DocumentData } from 'firebase/firest
 
 interface BookingData extends DocumentData {
   id: string;
+  bookingId?: string;
   orderId?: string;
   paymentStatus: string;
   sportType?: string;
@@ -24,15 +25,16 @@ export default function PaymentConfirmation() {
   const [pending, setPending] = useState(false);
   const [location] = useLocation();
   const retries = useRef(0);
-  const maxRetries = 10; // 10 x 3s = 30s
+  const maxRetries = 20; // Increased to 20 x 3s = 60s for tournament bookings
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('orderId') || params.get('order_id');
+    const bookingId = params.get('bookingId');
     const isTournament = params.get('type') === 'tournament';
 
-    if (!orderId) {
-      setError('Missing order ID in URL.');
+    if (!orderId && !bookingId) {
+      setError('Missing booking reference in URL.');
       setLoading(false);
       return;
     }
@@ -42,57 +44,83 @@ export default function PaymentConfirmation() {
     const fetchBooking = async () => {
       setLoading(true);
       try {
-        // Try tournament bookings first if type is tournament, otherwise try regular bookings first
-        const collections = isTournament 
-          ? ['tournamentBookings', 'bookings']
-          : ['bookings', 'tournamentBookings'];
-
-        let foundBooking = null;
-
-        for (const collectionName of collections) {
-          const bookingsQuery = query(
-            collection(db, collectionName),
-            where('orderId', '==', orderId)
+        // Build queries for both orderId and bookingId
+        const queries = [];
+        
+        // Tournament booking queries
+        if (orderId) {
+          queries.push(
+            query(collection(db, 'tournamentBookings'), where('orderId', '==', orderId))
           );
+        }
+        if (bookingId) {
+          queries.push(
+            query(collection(db, 'tournamentBookings'), where('bookingId', '==', bookingId))
+          );
+        }
+        
+        // Regular booking query (if not explicitly tournament)
+        if (!isTournament && orderId) {
+          queries.push(
+            query(collection(db, 'bookings'), where('orderId', '==', orderId))
+          );
+        }
 
-          const querySnapshot = await getDocs(bookingsQuery);
-
+        // Try all queries until we find a match
+        let foundBooking = null;
+        for (const q of queries) {
+          const querySnapshot = await getDocs(q);
           if (!querySnapshot.empty) {
             const doc = querySnapshot.docs[0];
             foundBooking = {
               id: doc.id,
               ...doc.data(),
-              bookingType: collectionName === 'tournamentBookings' ? 'tournament' : 'regular'
+              bookingType: doc.ref.parent.id === 'tournamentBookings' ? 'tournament' : 'regular'
             } as BookingData;
             break;
           }
         }
 
         if (foundBooking) {
-          if (foundBooking.paymentStatus === 'success') {
+          console.log('Found booking:', { 
+            id: foundBooking.id, 
+            type: foundBooking.bookingType, 
+            status: foundBooking.paymentStatus 
+          });
+
+          // For tournament bookings, we consider pending as a valid state initially
+          if (foundBooking.paymentStatus === 'success' || 
+              (foundBooking.bookingType === 'tournament' && foundBooking.paymentStatus === 'pending' && retries.current < 5)) {
             setBookingData(foundBooking);
-            setPending(false);
+            setPending(foundBooking.paymentStatus === 'pending');
             setError(null);
+            
+            // Continue checking if payment is pending
+            if (foundBooking.paymentStatus === 'pending') {
+              timeout = setTimeout(fetchBooking, 3000);
+            }
           } else if (foundBooking.paymentStatus === 'pending') {
             if (retries.current < maxRetries) {
+              console.log('Payment still pending, retry:', retries.current + 1);
               retries.current += 1;
               setPending(true);
               timeout = setTimeout(fetchBooking, 3000);
             } else {
-              setError('Payment confirmation timed out. If payment was deducted, please contact support.');
+              setError('Payment confirmation is taking longer than expected. Please check your email for confirmation.');
               setPending(false);
             }
           } else {
-            setError('Payment failed or was cancelled. Please try booking again.');
+            setError(`Payment ${foundBooking.paymentStatus}. Please try again or contact support.`);
             setPending(false);
           }
         } else {
           if (retries.current < maxRetries) {
+            console.log('Booking not found, retry:', retries.current + 1);
             retries.current += 1;
             setPending(true);
             timeout = setTimeout(fetchBooking, 3000);
           } else {
-            setError('Booking not found. If payment was deducted, please contact support.');
+            setError('Booking not found. Please check your email for confirmation or contact support.');
             setPending(false);
           }
         }
@@ -130,7 +158,7 @@ export default function PaymentConfirmation() {
           Payment is processing...<br />
           Please wait while we confirm your booking.<br />
           <span className="text-sm text-gray-600">
-            This may take up to 30 seconds
+            This may take up to 60 seconds
           </span>
         </div>
       </div>
@@ -143,12 +171,18 @@ export default function PaymentConfirmation() {
         <div className="text-red-600 text-xl text-center mb-4">
           {error}
         </div>
-        <button
-          onClick={() => window.location.reload()}
+        <button 
+          onClick={() => window.location.reload()} 
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
           Refresh Page
         </button>
+        <div className="mt-4 text-sm text-gray-600 text-center">
+          {new URLSearchParams(window.location.search).get('orderId') && 
+            `Order ID: ${new URLSearchParams(window.location.search).get('orderId')}`}
+          {new URLSearchParams(window.location.search).get('bookingId') && 
+            `Booking ID: ${new URLSearchParams(window.location.search).get('bookingId')}`}
+        </div>
       </div>
     );
   }
