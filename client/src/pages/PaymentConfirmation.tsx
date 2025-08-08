@@ -3,23 +3,26 @@ import { useLocation } from 'wouter';
 import ConfirmationSection from '@/components/ConfirmationSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, Timestamp } from 'firebase/firestore';
 
-interface BookingData extends DocumentData {
+interface TournamentBookingData extends DocumentData {
   id: string;
-  bookingId?: string;
-  orderId?: string;
+  amount: number;
+  bookingDate: Timestamp;
+  bookingId: string;
+  captainEmail: string;
+  captainMobile: string;
+  captainName: string;
   paymentStatus: string;
-  sportType?: string;
-  bookingDate?: string;
-  teamName?: string;
-  captainName?: string;
-  captainMobile?: string;
-  bookingType?: 'regular' | 'tournament';
+  sportType: string;
+  teamMembers: string[];
+  teamName: string;
+  tournamentId: string;
+  tournamentName: string;
 }
 
 export default function PaymentConfirmation() {
-  const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [bookingData, setBookingData] = useState<TournamentBookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -29,10 +32,10 @@ export default function PaymentConfirmation() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('orderId') || params.get('order_id');
+    const bookingId = params.get('bookingId');
 
-    if (!orderId) {
-      setError('Missing order ID in URL.');
+    if (!bookingId) {
+      setError('Missing booking ID in URL.');
       setLoading(false);
       return;
     }
@@ -42,77 +45,45 @@ export default function PaymentConfirmation() {
     const fetchBooking = async () => {
       setLoading(true);
       try {
-        console.log('Attempting to fetch booking with orderId:', orderId);
+        console.log('Attempting to fetch tournament booking with bookingId:', bookingId);
 
-        // First try tournament bookings
-        let querySnapshot = await getDocs(
-          query(
-            collection(db, 'tournamentBookings'),
-            where('bookingId', '==', orderId)
-          )
+        // Query tournament bookings using bookingId
+        const tournamentQuery = query(
+          collection(db, 'tournamentBookings'),
+          where('bookingId', '==', bookingId)
         );
 
-        // If not found by bookingId, try orderId
-        if (querySnapshot.empty) {
-          console.log('Not found by bookingId, trying orderId in tournament bookings');
-          querySnapshot = await getDocs(
-            query(
-              collection(db, 'tournamentBookings'),
-              where('orderId', '==', orderId)
-            )
-          );
-        }
-
-        // If still not found, try regular bookings
-        if (querySnapshot.empty) {
-          console.log('Not found in tournament bookings, trying regular bookings');
-          querySnapshot = await getDocs(
-            query(
-              collection(db, 'bookings'),
-              where('orderId', '==', orderId)
-            )
-          );
-        }
+        const querySnapshot = await getDocs(tournamentQuery);
 
         if (!querySnapshot.empty) {
           const doc = querySnapshot.docs[0];
           const data = doc.data();
-          console.log('Found booking:', data);
+          console.log('Found tournament booking:', data);
 
           const booking = {
             id: doc.id,
             ...data,
-            bookingType: doc.ref.parent.id === 'tournamentBookings' ? 'tournament' : 'regular'
-          } as BookingData;
+          } as TournamentBookingData;
 
-          // Special handling for tournament bookings
-          if (booking.bookingType === 'tournament') {
-            // For tournament bookings, show booking even if payment is pending
-            setBookingData(booking);
-            setPending(booking.paymentStatus === 'pending');
+          setBookingData(booking);
+          
+          if (booking.paymentStatus === 'success') {
+            setPending(false);
             setError(null);
-
-            // Continue polling if payment is pending
-            if (booking.paymentStatus === 'pending' && retries.current < maxRetries) {
-              console.log('Tournament booking payment pending, will retry');
-              retries.current += 1;
-              timeout = setTimeout(fetchBooking, 3000);
-            }
-          } else {
-            // For regular bookings, require success status
-            if (booking.paymentStatus === 'success') {
-              setBookingData(booking);
-              setPending(false);
-              setError(null);
-            } else if (retries.current < maxRetries) {
-              console.log('Regular booking payment pending, will retry');
+          } else if (booking.paymentStatus === 'pending') {
+            if (retries.current < maxRetries) {
+              console.log('Payment pending, retry:', retries.current + 1);
               retries.current += 1;
               setPending(true);
               timeout = setTimeout(fetchBooking, 3000);
             } else {
-              setError('Payment confirmation timeout. Please check your email for confirmation.');
+              // After max retries, still show the booking but with a warning
               setPending(false);
+              setError('Payment confirmation is taking longer than expected. You will receive a confirmation email once payment is confirmed.');
             }
+          } else {
+            setError(`Payment ${booking.paymentStatus}. Please try again or contact support.`);
+            setPending(false);
           }
         } else {
           console.log('No booking found, attempt:', retries.current + 1);
@@ -121,12 +92,12 @@ export default function PaymentConfirmation() {
             setPending(true);
             timeout = setTimeout(fetchBooking, 3000);
           } else {
-            setError('Booking not found. Please check your email for confirmation or contact support.');
+            setError('Tournament booking not found. Please check your email for confirmation or contact support.');
             setPending(false);
           }
         }
       } catch (err) {
-        console.error('Error fetching booking:', err);
+        console.error('Error fetching tournament booking:', err);
         if (retries.current < maxRetries) {
           retries.current += 1;
           timeout = setTimeout(fetchBooking, 3000);
@@ -168,7 +139,7 @@ export default function PaymentConfirmation() {
           </span>
         </div>
         <div className="mt-2 text-sm text-gray-600">
-          Order ID: {new URLSearchParams(window.location.search).get('orderId')}
+          Booking ID: {new URLSearchParams(window.location.search).get('bookingId')}
         </div>
       </div>
     );
@@ -187,7 +158,7 @@ export default function PaymentConfirmation() {
           Refresh Page
         </button>
         <div className="mt-4 text-sm text-gray-600 text-center">
-          Order ID: {new URLSearchParams(window.location.search).get('orderId')}
+          Booking ID: {new URLSearchParams(window.location.search).get('bookingId')}
         </div>
       </div>
     );
@@ -200,7 +171,7 @@ export default function PaymentConfirmation() {
   return (
     <ConfirmationSection
       bookingData={bookingData}
-      onBookAnother={() => window.location.href = '/'}
+      onBookAnother={() => window.location.href = '/tournament'}
     />
   );
 }
