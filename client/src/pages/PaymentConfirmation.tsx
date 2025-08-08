@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, DocumentData, Timestamp } from 'fire
 
 interface TournamentBookingData extends DocumentData {
   id: string;
-  amount1: number;
+  amount: number;
   bookingDate: Timestamp;
   bookingId: string;
   captainEmail: string;
@@ -54,18 +54,18 @@ export default function PaymentConfirmation() {
           // Create booking object with exact field names from Firebase
           const booking: TournamentBookingData = {
             id: doc.id,
-            amount1: data.amount || 0,
-            bookingDate: data.bookingDate || Timestamp.now(),
-            bookingId: data.bookingId || bookingId,
-            captainEmail: data.captainEmail || '',
-            captainMobile: data.captainMobile || '',
-            captainName: data.captainName || '',
+            amount1: data.amount ?? 0,
+            bookingDate: data.bookingDate ?? Timestamp.now(),
+            bookingId: data.bookingId ?? bookingId,
+            captainEmail: data.captainEmail ?? '',
+            captainMobile: data.captainMobile ?? '',
+            captainName: data.captainName ?? '',
             paymentStatus: 'success', // Force success status
-            sportType: data.sportType || 'cricket',
+            sportType: data.sportType ?? 'cricket',
             teamMembers: Array.isArray(data.teamMembers) ? data.teamMembers : [''],
-            teamName: data.teamName || '',
-            tournamentId: data.tournamentId || '',
-            tournamentName: data.tournamentName || '',
+            teamName: data.teamName ?? '',
+            tournamentId: data.tournamentId ?? '',
+            tournamentName: data.tournamentName ?? '',
             ...data // Include any additional fields
           };
 
@@ -124,9 +124,10 @@ export default function PaymentConfirmation() {
       />
       {/* Optional notification for real payment status */}
       <div className="fixed bottom-4 right-4 max-w-md bg-green-50 p-4 rounded-lg shadow-lg text-green-700 text-sm">
-        Your tournament registration is confirmed! You will receive a confirmation email shortly.
+        Your tournament registration is confirmed!
       </div>
     </div>
   );
 }
+
 
