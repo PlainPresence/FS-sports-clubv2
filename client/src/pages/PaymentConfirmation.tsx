@@ -1,134 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'wouter';
 import ConfirmationSection from '@/components/ConfirmationSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, Timestamp } from 'firebase/firestore';
-
-interface TournamentBookingData extends DocumentData {
-  id: string;
-  amount: number;
-  bookingDate: Timestamp;
-  bookingId: string;
-  captainEmail: string;
-  captainMobile: string;
-  captainName: string;
-  paymentStatus: string;
-  sportType: string;
-  teamMembers: string[];
-  teamName: string;
-  tournamentId: string;
-  tournamentName: string;
-}
 
 export default function PaymentConfirmation() {
-  const [bookingData, setBookingData] = useState<TournamentBookingData | null>(null);
+  const [bookingData, setBookingData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [location] = useLocation();
+  const retries = useRef(0);
+  const maxRetries = 10; // 10 x 3s = 30s
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('orderId') || params.get('order_id');
+    if (!orderId) {
+      setError('Missing order ID in URL.');
+      setLoading(false);
+      return;
+    }
+    let timeout: NodeJS.Timeout;
     const fetchBooking = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const params = new URLSearchParams(window.location.search);
-        const bookingId = params.get('bookingId') || params.get('order_id');
-
-        if (!bookingId) {
-          console.error('No booking ID found in URL');
-          setError('Missing booking ID in URL.');
-          return;
-        }
-
-        console.log('Fetching booking with ID:', bookingId);
-
-        const bookingsRef = collection(db, 'tournamentBookings');
-        const bookingQuery = query(bookingsRef, where('bookingId', '==', bookingId));
-        const querySnapshot = await getDocs(bookingQuery);
-
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          const data = doc.data();
-          console.log('Found booking data:', data);
-
-          // Create booking object with exact field names from Firebase
-          const booking: TournamentBookingData = {
-            id: doc.id,
-            amount: data.amount ?? 0,
-            bookingDate: data.bookingDate ?? Timestamp.now(),
-            bookingId: data.bookingId ?? bookingId,
-            captainEmail: data.captainEmail ?? '',
-            captainMobile: data.captainMobile ?? '',
-            captainName: data.captainName ?? '',
-            paymentStatus: 'success', // Force success status
-            sportType: data.sportType ?? 'cricket',
-            teamMembers: Array.isArray(data.teamMembers) ? data.teamMembers : [''],
-            teamName: data.teamName ?? '',
-            tournamentId: data.tournamentId ?? '',
-            tournamentName: data.tournamentName ?? '',
-            ...data // Include any additional fields
-          };
-
-          setBookingData(booking);
+        const res = await fetch(`/api/booking/by-cashfree-order?orderId=${orderId}`);
+        const data = await res.json();
+        if (data.success && data.booking) {
+          setBookingData(data.booking);
+          setPending(false);
           setError(null);
         } else {
-          console.error('No booking found with ID:', bookingId);
-          setError('Booking not found. Please contact support if payment was deducted.');
+          if (retries.current < maxRetries) {
+            setPending(true);
+            retries.current += 1;
+            timeout = setTimeout(fetchBooking, 3000);
+          } else {
+            setError('Booking not found or payment not confirmed.');
+            setPending(false);
+          }
         }
       } catch (err) {
-        console.error('Error fetching booking:', err);
-        setError('Error loading booking details. Please refresh the page.');
+        setError('Failed to fetch booking.');
+        setPending(false);
       } finally {
         setLoading(false);
       }
     };
-
     fetchBooking();
+    return () => clearTimeout(timeout);
   }, [location]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <div className="flex justify-center items-center min-h-screen"><LoadingSpinner size="lg" /></div>;
   }
-
+  if (pending) {
+    return <div className="flex flex-col items-center justify-center min-h-screen text-blue-600 text-xl">Payment is processing...<br/>Please wait while we confirm your booking.</div>;
+  }
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-red-600 text-xl text-center mb-4">
-          {error}
-        </div>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-        >
-          Refresh Page
-        </button>
-      </div>
-    );
+    return <div className="flex flex-col items-center justify-center min-h-screen text-red-600 text-xl">{error}</div>;
   }
-
   if (!bookingData) {
     return null;
   }
-
   return (
-    <div className="min-h-screen">
-      <ConfirmationSection
-        bookingData={bookingData}
-        onBookAnother={() => {
-          window.location.href = '/tournament';
-        }}
-      />
-      {/* Optional notification for real payment status */}
-      <div className="fixed bottom-4 right-4 max-w-md bg-green-50 p-4 rounded-lg shadow-lg text-green-700 text-sm">
-        Your tournament registration is confirmed!
-      </div>
-    </div>
+    <ConfirmationSection bookingData={bookingData} onBookAnother={() => window.location.href = '/'} />
   );
-}
-
-
-
+} 
