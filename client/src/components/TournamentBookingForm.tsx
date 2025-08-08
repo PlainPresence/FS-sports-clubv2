@@ -168,6 +168,9 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       
       console.log('Tournament payment session created, launching Cashfree...');
       
+      // Update tournament slots
+      await updateTournamentSlots(tournamentId, tournament.remainingSlots - 1);
+      
       // 2. Launch Cashfree payment UI
       await initiateCashfreePayment(sessionData.paymentSessionId, bookingData.bookingId);
       
