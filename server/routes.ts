@@ -126,6 +126,12 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           console.log('Booking already exists for orderId:', order.order_id);
           return; // Exit transaction, do not create duplicate
         }
+        // Skip double booking check for tournaments
+        if (finalSlotInfo.skipDoubleBookingCheck) {
+          console.log('Skipping double booking check for tournament booking');
+          return;
+        }
+
         // Check for double booking - prevent booking the same slots
         console.log('Checking for double booking...');
         const timeSlotsArr: string[] = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
