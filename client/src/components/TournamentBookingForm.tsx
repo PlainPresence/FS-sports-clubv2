@@ -44,9 +44,9 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       teamName: '',
       captainName: '',
       captainMobile: '',
-      captainEmail: '',
-      teamMembers: [''],
-      tournamentId,
+      captainEmail: '', // string, not undefined
+      teamMembers: [''], // always at least one empty string
+      tournamentId: tournamentId || '', // ensure string
     },
   });
 
@@ -57,7 +57,7 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
         const tournamentData = await getTournament(tournamentId);
         if (tournamentData && typeof tournamentData === 'object' && 'name' in tournamentData) {
           setTournament(tournamentData as Tournament);
-          form.setValue('tournamentId', tournamentId);
+          form.setValue('tournamentId', tournamentId || '');
         } else {
           toast({
             title: 'Tournament Not Found',
@@ -78,7 +78,9 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       }
     };
 
-    fetchTournament();
+    if (tournamentId) {
+      fetchTournament();
+    }
   }, [tournamentId, form, toast, setLocation]);
 
   const addTeamMember = () => {
@@ -89,15 +91,21 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
     if (teamMembers.length > 1) {
       const newMembers = teamMembers.filter((_, i) => i !== index);
       setTeamMembers(newMembers);
-      form.setValue('teamMembers', newMembers.filter(member => member.trim() !== ''));
+      form.setValue(
+        'teamMembers',
+        newMembers.filter(member => member.trim() !== '')
+      );
     }
   };
 
   const updateTeamMember = (index: number, value: string) => {
     const newMembers = [...teamMembers];
-    newMembers[index] = value;
+    newMembers[index] = value || ''; // avoid undefined
     setTeamMembers(newMembers);
-    form.setValue('teamMembers', newMembers.filter(member => member.trim() !== ''));
+    form.setValue(
+      'teamMembers',
+      newMembers.filter(member => member.trim() !== '')
+    );
   };
 
   const generateBookingId = () => {
@@ -119,14 +127,20 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       const bookingId = generateBookingId();
       const amount = tournament.teamPrice;
 
+      // Clean and sanitize form data with safe replace operations
       const bookingData = {
         ...data,
         bookingId,
         amount,
         paymentStatus: 'pending',
-        tournamentId,
-        tournamentName: tournament.name,
-        sportType: tournament.sportType,
+        tournamentId: tournamentId || '',
+        tournamentName: (tournament.name || '').replace(/[^\w\s-]/gi, ''),
+        sportType: (tournament.sportType || '').replace(/[^\w\s-]/gi, ''),
+        teamName: (data.teamName || '').replace(/[^\w\s-]/gi, ''),
+        captainName: (data.captainName || '').replace(/[^\w\s-]/gi, ''),
+        captainEmail: (data.captainEmail || '').replace(/\s/g, ''),
+        captainMobile: (data.captainMobile || '').replace(/[^\d+]/g, ''),
+        teamMembers: (data.teamMembers || []).map(member => (member || '').replace(/[^\w\s-]/gi, '')),
       };
 
       console.log('Creating tournament booking with data:', bookingData);
@@ -146,9 +160,9 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
           amount: bookingData.amount,
           customerDetails: {
             customer_id: bookingData.bookingId,
-            customer_email: bookingData.captainEmail,
-            customer_phone: bookingData.captainMobile,
-            customer_name: bookingData.captainName,
+            customer_email: bookingData.captainEmail || '',
+            customer_phone: bookingData.captainMobile || '',
+            customer_name: bookingData.captainName || '',
           },
           slotInfo: {
             tournamentId: bookingData.tournamentId,
@@ -157,8 +171,8 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
             bookingId: bookingData.bookingId,
             teamName: bookingData.teamName,
             teamMembers: bookingData.teamMembers,
-            date: tournament?.startDate || new Date().toISOString().split('T')[0],
-            skipDoubleBookingCheck: true, // Skip double booking check for tournaments
+            date: (tournament?.startDate || new Date().toISOString()).split('T')[0],
+            skipDoubleBookingCheck: true,
             bookingType: 'tournament',
           }
         }),
@@ -175,19 +189,16 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       console.log('Tournament payment session created, launching Cashfree...');
       
       // Update tournament slots
-      await updateTournamentSlots(tournamentId, tournament.remainingSlots - 1);
+      await updateTournamentSlots(tournamentId, (tournament.remainingSlots || 0) - 1);
       
       // 2. Launch Cashfree payment UI
       await initiateCashfreePayment(sessionData.paymentSessionId, bookingData.bookingId);
-      
-      // Note: Don't reset isProcessing here as the user is redirected to Cashfree
-      // The processing state will be reset when they return to the confirmation page
       
     } catch (error: any) {
       console.error('Tournament booking error:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Tournament booking failed. Please try again.',
+        description: (error?.message || 'Tournament booking failed. Please try again.').replace(/[<>]/g, ''),
         variant: 'destructive',
       });
       setIsProcessing(false);
@@ -220,29 +231,29 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <span className="text-4xl mb-4 block">🏆</span>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{tournament.name}</h3>
-                <p className="text-gray-600 text-sm capitalize">{tournament.sportType}</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{tournament.name || 'Tournament'}</h3>
+                <p className="text-gray-600 text-sm capitalize">{tournament.sportType || 'Sport'}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Team Price:</span>
-                  <span className="font-bold text-primary text-xl">₹{tournament.teamPrice}</span>
+                  <span className="font-bold text-primary text-xl">₹{tournament.teamPrice || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Available Slots:</span>
-                  <span className="font-semibold text-gray-900">{tournament.remainingSlots}/{tournament.maxTeams}</span>
+                  <span className="font-semibold text-gray-900">{tournament.remainingSlots || 0}/{tournament.maxTeams || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Start Date:</span>
                   <span className="font-semibold text-gray-900">
-                    {new Date(tournament.startDate).toLocaleDateString()}
+                    {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString() : 'TBD'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Deadline:</span>
                   <span className="font-semibold text-gray-900">
-                    {new Date(tournament.registrationDeadline).toLocaleDateString()}
+                    {tournament.registrationDeadline ? new Date(tournament.registrationDeadline).toLocaleDateString() : 'TBD'}
                   </span>
                 </div>
               </div>
@@ -250,7 +261,7 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
               <div className="mt-6 p-4 bg-primary/10 rounded-xl">
                 <h4 className="font-semibold text-gray-900 mb-2">Tournament Details</h4>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  {tournament.description}
+                  {tournament.description || 'No description available'}
                 </p>
               </div>
             </CardContent>
@@ -354,10 +365,10 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
                     </Button>
                   </div>
 
-                  {teamMembers.map((member, index) => (
+                  {teamMembers.map((member = '', index) => (
                     <div key={index} className="flex items-center space-x-3">
                       <Input
-                        value={member}
+                        value={member ?? ''} // always a string
                         onChange={(e) => updateTeamMember(index, e.target.value)}
                         placeholder={`Team member ${index + 1} name`}
                         className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
@@ -384,12 +395,12 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Tournament Registration:</span>
-                      <span className="font-semibold text-gray-900">₹{tournament.teamPrice}</span>
+                      <span className="font-semibold text-gray-900">₹{tournament.teamPrice || 0}</span>
                     </div>
                     <div className="border-t border-gray-200 pt-3">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-gray-900 text-lg">Total Amount:</span>
-                        <span className="font-bold text-primary text-xl">₹{tournament.teamPrice}</span>
+                        <span className="font-bold text-primary text-xl">₹{tournament.teamPrice || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -398,9 +409,9 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={isProcessing || tournament.remainingSlots === 0}
+                  disabled={isProcessing || (tournament.remainingSlots || 0) === 0}
                   className={`w-full h-14 text-lg font-bold ${
-                    tournament.remainingSlots === 0
+                    (tournament.remainingSlots || 0) === 0
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-primary hover:bg-primary/90'
                   }`}
@@ -410,12 +421,12 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
                       <LoadingSpinner size="sm" className="mr-2" />
                       Processing Payment...
                     </>
-                  ) : tournament.remainingSlots === 0 ? (
+                  ) : (tournament.remainingSlots || 0) === 0 ? (
                     'Tournament Full'
                   ) : (
                     <>
                       <span className="mr-2">💳</span>
-                      Pay ₹{tournament.teamPrice} & Register Team
+                      Pay ₹{tournament.teamPrice || 0} & Register Team
                     </>
                   )}
                 </Button>
@@ -426,4 +437,4 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
       </motion.div>
     </div>
   );
-} 
+}
