@@ -24,11 +24,7 @@ export default function PaymentConfirmation() {
           return null;
         }
         
-        const search = window.location.search;
-        if (!search || typeof search !== 'string') {
-          return null;
-        }
-
+        const search = window.location.search || '';
         const params = new URLSearchParams(search);
         return params.get('orderId') || params.get('order_id');
       } catch (err) {
