@@ -54,7 +54,7 @@ export default function PaymentConfirmation() {
           // Create booking object with exact field names from Firebase
           const booking: TournamentBookingData = {
             id: doc.id,
-            amount1: data.amount1 || 0,
+            amount1: data.amount || 0,
             bookingDate: data.bookingDate || Timestamp.now(),
             bookingId: data.bookingId || bookingId,
             captainEmail: data.captainEmail || '',
@@ -129,3 +129,4 @@ export default function PaymentConfirmation() {
     </div>
   );
 }
+
