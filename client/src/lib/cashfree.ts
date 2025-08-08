@@ -26,14 +26,12 @@ export const initiateCashfreePayment = async (paymentSessionId: string, orderId:
   
   // Use production mode in production environment
   const mode = import.meta.env.PROD ? 'production' : 'sandbox';
-  const cashfree = new window.Cashfree({ mode });
-  
-  cashfree.checkout({
+  const cashfree = new window.Cashfree({ mode });cashfree.checkout({
     paymentSessionId,
     redirectTarget: '_self',
-    redirectUrl: `https://fs-sports-clubv2.onrender.com/payment-confirmation?orderId=${orderId}`,
+    redirectUrl: `https://fs-sports-clubv2.onrender.com/payment-confirmation?bookingId=${orderId}`,
     onSuccess: (data: any) => {
-      window.location.href = `/payment-confirmation?orderId=${orderId}`;
+      window.location.href = `/payment-confirmation?bookingId=${orderId}`;
     },
     onFailure: (data: any) => {
       window.location.href = `/?error=payment_failed`;
