@@ -158,7 +158,7 @@ export default function TournamentBookingForm({ tournamentId, onBookingSuccess }
             teamName: bookingData.teamName,
             teamMembers: bookingData.teamMembers,
             date: tournament?.startDate || new Date().toISOString().split('T')[0],
-            timeSlots: ['Tournament'],
+            skipDoubleBookingCheck: true, // Skip double booking check for tournaments
             bookingType: 'tournament',
           }
         }),
