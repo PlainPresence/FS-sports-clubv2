@@ -157,7 +157,7 @@ export default function SportsSection() {
                       ₹{sport.price}
                     </div>
                     <div className={`text-xs sm:text-sm text-${sport.color === 'primary' ? 'primary' : sport.color === 'secondary' ? 'secondary' : sport.color} font-medium`}>
-                      per {sport.id === 'airhockey' ? '30 min' : 'hour'}
+                      per {sport.id === 'airhockey' ? 'hour' : 'hour'}
                     </div>
                   </div>
                   
