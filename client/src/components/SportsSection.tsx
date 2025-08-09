@@ -219,7 +219,7 @@ export default function SportsSection() {
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
-                          <span>30-Minute Sessions</span>
+                          <span>1 hour Sessions</span>
                         </div>
                         <div className="flex items-center text-xs sm:text-sm text-gray-600">
                           <span className="text-green-500 mr-2 text-xs sm:text-sm">✓</span>
