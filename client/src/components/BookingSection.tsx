@@ -583,7 +583,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                         <span className="text-gray-600">Base Price:</span>
                         <span className="font-semibold">
                           ₹{prices && prices[selectedFacility] ? prices[selectedFacility] : 0} x {slotCount} = ₹{prices && prices[selectedFacility] ? 
-                            (selectedFacility === 'airhockey' ? prices[selectedFacility] * 0.5 * slotCount : prices[selectedFacility] * slotCount) : 0}
+                            (selectedFacility === 'airhockey' ? prices[selectedFacility] * slotCount : prices[selectedFacility] * slotCount) : 0}
                         </span>
                       </div>
                       
