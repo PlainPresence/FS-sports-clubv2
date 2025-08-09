@@ -68,11 +68,26 @@ export const useSlots = (date: string, sportType: string) => {
     const endHour = 24; // End of day
     
     // Determine slot duration based on sport type
-    const isAirHockey = sportType.toLowerCase().includes('air hockey');
-    const slotDurationMinutes = isAirHockey ? 30 : 60; // 30 minutes for Air Hockey, 60 for others
-
+    console.log('🏒 SLOT GENERATION DEBUG:');
+    console.log('Current sportType:', JSON.stringify(sportType));
+    console.log('SportType type:', typeof sportType);
+    
+    const normalizedSportType = (sportType || '').toLowerCase().trim();
+    console.log('Normalized sport type:', normalizedSportType);
+    
+    // More comprehensive Air Hockey detection
+    const isAirHockey = normalizedSportType.includes('air hockey') || 
+                       normalizedSportType.includes('airhockey') ||
+                       normalizedSportType.includes('air_hockey') ||
+                       normalizedSportType === 'air hockey table' ||
+                       normalizedSportType.includes('hockey');
+    
+    console.log('🎯 Is Air Hockey?', isAirHockey);
+    console.log('Will generate', isAirHockey ? '30-minute' : '60-minute', 'slots');
+    
     if (isAirHockey) {
       // Generate 30-minute slots for Air Hockey
+      console.log('🕐 Generating 30-minute Air Hockey slots...');
       for (let hour = startHour; hour < endHour; hour++) {
         // First 30-minute slot: XX:00 - XX:30
         const firstSlotStart = formatTimeWithMinutes(hour, 0);
@@ -100,8 +115,11 @@ export const useSlots = (date: string, sportType: string) => {
           blocked: false,
         });
 
-        console.log(`Generated Air Hockey slots - ${firstSlotTime} and ${secondSlotTime}`);
+        if (hour < 3) { // Only log first few for debugging
+          console.log(`Generated Air Hockey slots - ${firstSlotTime} and ${secondSlotTime}`);
+        }
       }
+      console.log(`✅ Generated ${allSlots.length} total Air Hockey slots`);
     } else {
       // Generate 1-hour slots for other sports
       for (let hour = startHour; hour < endHour; hour++) {
@@ -233,6 +251,16 @@ export const useSlots = (date: string, sportType: string) => {
       console.log('System message received:', data);
     }
   });
+
+  // Debug logging for sportType changes
+  useEffect(() => {
+    console.log('=== useSlots Hook Debug Info ===');
+    console.log('Date:', date);
+    console.log('SportType received:', JSON.stringify(sportType));
+    console.log('SportType type:', typeof sportType);
+    console.log('SportType length:', sportType?.length);
+    console.log('================================');
+  }, [date, sportType]);
 
   // Fetch slots when date or sportType changes
   useEffect(() => {
