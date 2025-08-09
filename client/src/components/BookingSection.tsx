@@ -116,7 +116,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
         const basePrice = prices[data.facilityType] || 0;
         if (data.facilityType === 'airhockey') {
           // For air hockey, each slot is 30 minutes, so multiply by 0.5
-          amount = (basePrice * 0.5 * data.timeSlots.length);
+          amount = (basePrice * data.timeSlots.length);
         } else {
           // For other sports, each slot is 1 hour
           amount = (basePrice * data.timeSlots.length);
