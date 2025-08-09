@@ -44,6 +44,15 @@ export const useSlots = (date: string, sportType: string) => {
     return `${(hour - 12).toString().padStart(2, '0')} PM`;
   };
 
+  // Format time with minutes
+  const formatTimeWithMinutes = (hour: number, minutes: number): string => {
+    const period = hour < 12 ? 'AM' : 'PM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const formattedHour = displayHour.toString().padStart(2, '0');
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    return `${formattedHour}:${formattedMinutes} ${period}`;
+  };
+
   // Convert time format to match Firebase format
   const convertTimeFormat = (timeSlot: string): string => {
     const [start, end] = timeSlot.split('-').map(t => t.trim());
@@ -52,29 +61,68 @@ export const useSlots = (date: string, sportType: string) => {
     return `${to12Hour(startHour).split(' ')[0]}:00 ${to12Hour(startHour).split(' ')[1]} - ${to12Hour(endHour).split(' ')[0]}:00 ${to12Hour(endHour).split(' ')[1]}`;
   };
 
-  // Generate all possible time slots
+  // Generate all possible time slots based on sport type
   const generateAllSlots = () => {
     const allSlots: SlotInfo[] = [];
     const startHour = 0; // Midnight
     const endHour = 24; // End of day
+    
+    // Determine slot duration based on sport type
+    const isAirHockey = sportType.toLowerCase().includes('air hockey');
+    const slotDurationMinutes = isAirHockey ? 30 : 60; // 30 minutes for Air Hockey, 60 for others
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      const nextHour = (hour + 1) % 24;
-      
-      // Exactly match Firebase format: "12:00 AM - 01:00 AM"
-      const time = `${to12Hour(hour).split(' ')[0]}:00 ${to12Hour(hour).split(' ')[1]} - ${to12Hour(nextHour).split(' ')[0]}:00 ${to12Hour(nextHour).split(' ')[1]}`;
-      const display = time; // Use the same format for display
-      
-      console.log(`Generated slot - time: ${time}`);
-      
-      allSlots.push({
-        time,
-        display,
-        available: true,
-        booked: false,
-        blocked: false,
-      });
+    if (isAirHockey) {
+      // Generate 30-minute slots for Air Hockey
+      for (let hour = startHour; hour < endHour; hour++) {
+        // First 30-minute slot: XX:00 - XX:30
+        const firstSlotStart = formatTimeWithMinutes(hour, 0);
+        const firstSlotEnd = formatTimeWithMinutes(hour, 30);
+        const firstSlotTime = `${firstSlotStart} - ${firstSlotEnd}`;
+        
+        allSlots.push({
+          time: firstSlotTime,
+          display: firstSlotTime,
+          available: true,
+          booked: false,
+          blocked: false,
+        });
+
+        // Second 30-minute slot: XX:30 - (XX+1):00
+        const secondSlotStart = formatTimeWithMinutes(hour, 30);
+        const secondSlotEnd = formatTimeWithMinutes((hour + 1) % 24, 0);
+        const secondSlotTime = `${secondSlotStart} - ${secondSlotEnd}`;
+        
+        allSlots.push({
+          time: secondSlotTime,
+          display: secondSlotTime,
+          available: true,
+          booked: false,
+          blocked: false,
+        });
+
+        console.log(`Generated Air Hockey slots - ${firstSlotTime} and ${secondSlotTime}`);
+      }
+    } else {
+      // Generate 1-hour slots for other sports
+      for (let hour = startHour; hour < endHour; hour++) {
+        const nextHour = (hour + 1) % 24;
+        
+        // Exactly match Firebase format: "12:00 AM - 01:00 AM"
+        const time = `${to12Hour(hour).split(' ')[0]}:00 ${to12Hour(hour).split(' ')[1]} - ${to12Hour(nextHour).split(' ')[0]}:00 ${to12Hour(nextHour).split(' ')[1]}`;
+        const display = time; // Use the same format for display
+        
+        console.log(`Generated slot - time: ${time}`);
+        
+        allSlots.push({
+          time,
+          display,
+          available: true,
+          booked: false,
+          blocked: false,
+        });
+      }
     }
+    
     return allSlots;
   };
 
