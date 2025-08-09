@@ -199,7 +199,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
   if (prices && watchedFacility) {
     const basePrice = prices[watchedFacility] || 0;
     if (watchedFacility === 'airhockey') {
-      // For air hockey, each slot is 30 minutes, so multiply by 0.5
+      // For air hockey, each slot is 1 hour
       totalAmount = (basePrice * slotCount);
     } else {
       // For other sports, each slot is 1 hour
@@ -575,7 +575,7 @@ export default function BookingSection({ onBookingSuccess }: BookingSectionProps
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm sm:text-base">Duration:</span>
                         <span className="font-semibold text-sm sm:text-base">
-                          {slotCount} {selectedFacility === 'airhockey' ? '30-min slot(s)' : 'hour(s)'}
+                          {slotCount} {selectedFacility === 'airhockey' ? 'hours(s)' : 'hour(s)'}
                         </span>
                       </div>
                       
