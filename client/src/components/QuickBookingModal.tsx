@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { sendBookingConfirmation } from '@/lib/emailjs';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
@@ -30,6 +29,18 @@ const timeSlots = [
   '01:00-02:00', '02:00-03:00'
 ];
 
+// Convert 24-hour format slot to AM/PM
+const convertToAmPmFormat = (slot: string) => {
+  const [start, end] = slot.split('-');
+  const formatTime = (time: string) => {
+    let [hour, minute] = time.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+  return `${formatTime(start)} - ${formatTime(end)}`;
+};
+
 export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickBookingModalProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,7 +64,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         mobile: '',
         email: '',
         sportType: 'cricket',
-        date: new Date().toISOString().split('T')[0], // Today's date
+        date: new Date().toISOString().split('T')[0],
         timeSlot: '',
         amount: 0,
         speedMeter: false,
@@ -70,7 +81,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.fullName || !formData.mobile || !formData.date || !formData.timeSlot || formData.amount <= 0) {
       toast({
         title: 'Validation Error',
@@ -89,14 +100,15 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         email: formData.email || '',
         sportType: formData.sportType,
         date: formData.date,
-        timeSlot: formData.timeSlot,
+        timeSlot: formData.timeSlot, // raw value
+        timeSlots: [convertToAmPmFormat(formData.timeSlot)], // formatted value for DB
         amount: formData.amount,
         speedMeter: formData.speedMeter,
         speedMeterPrice: formData.speedMeterPrice,
-        paymentStatus: 'success', // Admin booking is automatically confirmed
+        paymentStatus: 'success',
         bookingDate: new Date(),
         status: 'confirmed',
-        isAdminBooking: true, // Flag to identify admin-created bookings
+        isAdminBooking: true,
       };
 
       const result = await fetch('/api/book-slot', {
@@ -105,13 +117,12 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         body: JSON.stringify({
           date: bookingData.date,
           sportType: bookingData.sportType,
-          timeSlots: [bookingData.timeSlot],
+          timeSlots: bookingData.timeSlots,
           bookingData,
         }),
       }).then(res => res.json());
-      
+
       if (result.success) {
-        // Send notifications
         if (formData.email) {
           await sendBookingConfirmation(bookingData);
         }
@@ -179,48 +190,33 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
           {/* Customer Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Customer Information</h3>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700">
-                  Full Name *
-                </Label>
+                <Label htmlFor="fullName">Full Name *</Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  placeholder="Customer's full name"
-                  className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
                   required
                 />
               </div>
-
               <div>
-                <Label htmlFor="mobile" className="text-sm font-semibold text-gray-700">
-                  Mobile Number *
-                </Label>
+                <Label htmlFor="mobile">Mobile Number *</Label>
                 <Input
                   id="mobile"
                   value={formData.mobile}
                   onChange={(e) => handleInputChange('mobile', e.target.value)}
-                  placeholder="Customer's mobile number"
-                  className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
                   required
                 />
               </div>
             </div>
-
             <div>
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
-                Email (Optional)
-              </Label>
+              <Label htmlFor="email">Email (Optional)</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="Customer's email address"
-                className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
               />
             </div>
           </div>
@@ -228,17 +224,13 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
           {/* Booking Details */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Booking Details</h3>
-            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="sportType" className="text-sm font-semibold text-gray-700">
-                  Sport/Facility *
-                </Label>
+                <Label htmlFor="sportType">Sport/Facility *</Label>
                 <select
                   id="sportType"
                   value={formData.sportType}
                   onChange={(e) => handleInputChange('sportType', e.target.value)}
-                  className="w-full h-12 border border-gray-200 rounded-lg focus:border-primary focus:ring-primary/20 px-3"
                   required
                 >
                   {sports.map((sport) => (
@@ -248,46 +240,35 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
                   ))}
                 </select>
               </div>
-
               <div>
-                <Label htmlFor="date" className="text-sm font-semibold text-gray-700">
-                  Date *
-                </Label>
+                <Label htmlFor="date">Date *</Label>
                 <Input
                   id="date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
                   required
                 />
               </div>
-
               <div>
-                <Label htmlFor="timeSlot" className="text-sm font-semibold text-gray-700">
-                  Time Slot *
-                </Label>
+                <Label htmlFor="timeSlot">Time Slot *</Label>
                 <select
                   id="timeSlot"
                   value={formData.timeSlot}
                   onChange={(e) => handleInputChange('timeSlot', e.target.value)}
-                  className="w-full h-12 border border-gray-200 rounded-lg focus:border-primary focus:ring-primary/20 px-3"
                   required
                 >
                   <option value="">Select time slot</option>
                   {timeSlots.map((slot) => (
                     <option key={slot} value={slot}>
-                      {slot.replace('-', ' - ').replace(/(\d{2}):(\d{2})/g, (match, hour, minute) => {
-                        const h = parseInt(hour);
-                        return `${h > 12 ? h - 12 : h || 12}:${minute} ${h >= 12 ? 'PM' : 'AM'}`;
-                      })}
+                      {convertToAmPmFormat(slot)}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Speed Meter Addon (only for cricket) */}
+            {/* Speed Meter Addon */}
             {formData.sportType === 'cricket' && (
               <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                 <input
@@ -295,33 +276,25 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
                   id="speedMeter"
                   checked={formData.speedMeter}
                   onChange={(e) => handleInputChange('speedMeter', e.target.checked)}
-                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                 />
-                <Label htmlFor="speedMeter" className="text-sm font-semibold text-gray-700">
-                  Speed Meter Add-on (₹100)
-                </Label>
+                <Label htmlFor="speedMeter">Speed Meter Add-on (₹100)</Label>
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="amount" className="text-sm font-semibold text-gray-700">
-                  Amount (₹) *
-                </Label>
+                <Label htmlFor="amount">Amount (₹) *</Label>
                 <Input
                   id="amount"
                   type="number"
                   value={formData.amount}
                   onChange={(e) => handleInputChange('amount', Number(e.target.value))}
-                  placeholder="Enter amount"
-                  className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20"
                   required
                 />
               </div>
-
               <div className="flex items-end">
                 <div className="w-full p-3 bg-primary/10 rounded-lg">
-                  <div className="text-sm text-gray-600">Total Amount</div>
+                  <div>Total Amount</div>
                   <div className="text-xl font-bold text-primary">
                     ₹{formData.amount + (formData.speedMeter ? 100 : 0)}
                   </div>
@@ -332,20 +305,10 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
 
           {/* Action Buttons */}
           <div className="flex space-x-3 pt-4 border-t border-gray-200">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-              disabled={isProcessing}
-            >
+            <Button type="button" onClick={onClose} variant="outline" disabled={isProcessing}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isProcessing}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
+            <Button type="submit" disabled={isProcessing}>
               {isProcessing ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />
@@ -363,4 +326,4 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
       </motion.div>
     </div>
   );
-} 
+}
