@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, setDoc, QueryDocumentSnapshot, runTransaction, getDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, updateDoc, setDoc, QueryDocumentSnapshot, runTransaction, getDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,11 +33,15 @@ export const logoutAdmin = async () => {
   }
 };
 
+// Updated to handle the new Firebase booking structure
 export const createBooking = async (bookingData: any) => {
   try {
     const docRef = await addDoc(collection(db, "bookings"), {
       ...bookingData,
       createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      // Ensure expiresAt is set if not provided
+      expiresAt: bookingData.expiresAt || Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000))
     });
     return { success: true, id: docRef.id };
   } catch (error: any) {
@@ -45,7 +49,7 @@ export const createBooking = async (bookingData: any) => {
   }
 };
 
-export const getBookings = async (filters?: { date?: string; search?: string }) => {
+export const getBookings = async (filters?: { date?: string; search?: string; status?: string }) => {
   try {
     let q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
     
@@ -56,44 +60,73 @@ export const getBookings = async (filters?: { date?: string; search?: string }) 
     const querySnapshot = await getDocs(q);
     const bookings = querySnapshot.docs.map((doc: any) => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate(),
+      updatedAt: doc.data().updatedAt?.toDate(),
+      expiresAt: doc.data().expiresAt?.toDate(),
     }));
 
+    let filteredBookings = bookings;
+
+    // Apply search filter
     if (filters?.search) {
-      return bookings.filter((booking: any) => 
+      filteredBookings = bookings.filter((booking: any) => 
         booking.mobile?.includes(filters.search!) || 
         booking.bookingId?.includes(filters.search!) ||
-        booking.fullName?.toLowerCase().includes(filters.search!.toLowerCase())
+        booking.fullName?.toLowerCase().includes(filters.search!.toLowerCase()) ||
+        booking.customerDetails?.customer_name?.toLowerCase().includes(filters.search!.toLowerCase()) ||
+        booking.customerDetails?.customer_phone?.includes(filters.search!)
       );
     }
 
-    return bookings;
+    // Apply status filter
+    if (filters?.status) {
+      filteredBookings = filteredBookings.filter((booking: any) => booking.status === filters.status);
+    }
+
+    return filteredBookings;
   } catch (error: any) {
     throw new Error(error.message);
   }
 };
 
-export const updateBooking = async (bookingId: string, updates: Partial<{ amount: number; paymentStatus: string }>) => {
+export const updateBooking = async (bookingId: string, updates: any) => {
   try {
     const bookingRef = doc(db, "bookings", bookingId);
-    await updateDoc(bookingRef, updates);
+    await updateDoc(bookingRef, {
+      ...updates,
+      updatedAt: Timestamp.now()
+    });
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 };
 
+// Updated to handle the new timeSlots array structure
 export const getAvailableSlots = async (date: string, sportType: string) => {
   try {
-    // Get existing bookings
+    // Get existing bookings - updated to handle timeSlots array
     const bookingsQuery = query(
       collection(db, "bookings"),
       where("date", "==", date),
       where("sportType", "==", sportType),
-      where("paymentStatus", "==", "success")
+      where("paymentStatus", "==", "success"),
+      where("status", "==", "confirmed")
     );
     const bookingsSnapshot = await getDocs(bookingsQuery);
-    const bookedSlots = bookingsSnapshot.docs.map((doc: any) => doc.data().timeSlot);
+    
+    // Extract booked slots from timeSlots arrays
+    const bookedSlots: string[] = [];
+    bookingsSnapshot.docs.forEach((doc: any) => {
+      const booking = doc.data();
+      if (booking.timeSlots && Array.isArray(booking.timeSlots)) {
+        bookedSlots.push(...booking.timeSlots);
+      } else if (booking.timeSlot) {
+        // Fallback for old structure
+        bookedSlots.push(booking.timeSlot);
+      }
+    });
 
     // Get blocked slots
     const blockedSlotsQuery = query(
@@ -113,7 +146,7 @@ export const getAvailableSlots = async (date: string, sportType: string) => {
     const isDateBlocked = !blockedDatesSnapshot.empty;
 
     return {
-      bookedSlots,
+      bookedSlots: [...new Set(bookedSlots)], // Remove duplicates
       blockedSlots,
       isDateBlocked,
     };
@@ -147,8 +180,6 @@ export const createBlockedDate = async (dateData: any) => {
 };
 
 // Slot Prices Management
-// Now supports arbitrary keys, including 'speedMeter' for add-ons
-// Example: updateSlotPrice('speedMeter', 100)
 export const getSlotPrices = async () => {
   try {
     const pricesSnapshot = await getDocs(collection(db, "slotPrices"));
@@ -186,30 +217,44 @@ export const updateSlotPrice = async (sport: string, price: number) => {
   }
 };
 
+// Updated booking creation with new structure support
 export const attemptBookingWithSlotCheck = async (bookingData: any) => {
   try {
     const bookingRef = collection(db, "bookings");
     let result;
     
     await runTransaction(db, async (transaction) => {
-      // For each slot, check if it is already booked
-      for (const slot of bookingData.timeSlots) {
+      // Check if any of the requested slots are already booked
+      const slotsToCheck = bookingData.timeSlots || [bookingData.timeSlot];
+      
+      for (const slot of slotsToCheck) {
+        // Query for bookings that have this slot in their timeSlots array
         const slotQuery = query(
           bookingRef,
           where("date", "==", bookingData.date),
           where("sportType", "==", bookingData.sportType),
-          where("timeSlot", "==", slot),
-          where("paymentStatus", "==", "success")
+          where("paymentStatus", "==", "success"),
+          where("status", "==", "confirmed")
         );
+        
         const slotSnapshot = await getDocs(slotQuery);
-        if (!slotSnapshot.empty) {
-          // At least one slot is already booked
+        
+        // Check if any existing booking has this slot
+        const isSlotBooked = slotSnapshot.docs.some(doc => {
+          const booking = doc.data();
+          if (booking.timeSlots && Array.isArray(booking.timeSlots)) {
+            return booking.timeSlots.includes(slot);
+          }
+          return booking.timeSlot === slot; // Fallback for old structure
+        });
+        
+        if (isSlotBooked) {
           result = { success: false, reason: "Slot already booked" };
           return;
         }
       }
       
-      // Also check for blocked slots
+      // Check for blocked slots
       const blockedSlotsQuery = query(
         collection(db, "blockedSlots"),
         where("date", "==", bookingData.date),
@@ -218,7 +263,7 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
       const blockedSlotsSnapshot = await getDocs(blockedSlotsQuery);
       const blockedSlots = blockedSlotsSnapshot.docs.map(doc => doc.data().timeSlot);
       
-      for (const slot of bookingData.timeSlots) {
+      for (const slot of slotsToCheck) {
         if (blockedSlots.includes(slot)) {
           result = { success: false, reason: "Slot is blocked" };
           return;
@@ -236,12 +281,19 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
         return;
       }
       
-      // All slots are available, create the booking
+      // All slots are available, create the booking with proper structure
       const docRef = doc(bookingRef);
-      transaction.set(docRef, {
+      const finalBookingData = {
         ...bookingData,
         createdAt: Timestamp.now(),
-      });
+        updatedAt: Timestamp.now(),
+        // Ensure expiresAt is set
+        expiresAt: bookingData.expiresAt || Timestamp.fromDate(new Date(Date.now() + 30 * 60 * 1000)),
+        // Ensure timeSlots is always an array
+        timeSlots: bookingData.timeSlots || [bookingData.timeSlot],
+      };
+      
+      transaction.set(docRef, finalBookingData);
       result = { success: true, id: docRef.id };
     });
     
@@ -250,6 +302,66 @@ export const attemptBookingWithSlotCheck = async (bookingData: any) => {
     console.error('Error in atomic booking creation:', error);
     return { success: false, error: error.message || 'Booking creation failed' };
   }
+};
+
+// New function to check for expired bookings
+export const checkExpiredBookings = async () => {
+  try {
+    const now = Timestamp.now();
+    const expiredQuery = query(
+      collection(db, "bookings"),
+      where("expiresAt", "<", now),
+      where("status", "!=", "confirmed"),
+      where("status", "!=", "expired")
+    );
+    
+    const expiredSnapshot = await getDocs(expiredQuery);
+    const expiredBookings: any[] = [];
+    
+    for (const docSnapshot of expiredSnapshot.docs) {
+      const bookingData = { id: docSnapshot.id, ...docSnapshot.data() };
+      
+      // Update status to expired
+      await updateDoc(doc(db, "bookings", docSnapshot.id), {
+        status: "expired",
+        updatedAt: Timestamp.now()
+      });
+      
+      expiredBookings.push(bookingData);
+    }
+    
+    return { success: true, expiredBookings };
+  } catch (error: any) {
+    console.error('Error checking expired bookings:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// New function to listen to booking changes (for WebSocket)
+export const listenToBookingChanges = (
+  date: string, 
+  sportType: string, 
+  callback: (bookings: any[]) => void
+) => {
+  const bookingsQuery = query(
+    collection(db, "bookings"),
+    where("date", "==", date),
+    where("sportType", "==", sportType)
+  );
+  
+  return onSnapshot(bookingsQuery, (snapshot) => {
+    const bookings = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate(),
+      updatedAt: doc.data().updatedAt?.toDate(),
+      expiresAt: doc.data().expiresAt?.toDate(),
+    }));
+    
+    callback(bookings);
+  }, (error) => {
+    console.error('Error listening to booking changes:', error);
+  });
 };
 
 export const logFailedPayment = async (logData: any) => {
@@ -264,7 +376,7 @@ export const logFailedPayment = async (logData: any) => {
   }
 };
 
-// Tournament Management Functions
+// Tournament Management Functions (unchanged)
 export const getTournaments = async () => {
   try {
     const tournamentsRef = collection(db, "tournaments");
@@ -367,7 +479,7 @@ export const deleteTournament = async (tournamentId: string) => {
   }
 };
 
-// Tournament Booking Functions
+// Tournament Booking Functions (unchanged)
 export const createTournamentBooking = async (bookingData: any) => {
   try {
     const bookingsRef = collection(db, "tournamentBookings");
