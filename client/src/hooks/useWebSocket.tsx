@@ -1,16 +1,54 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+interface BookingData {
+  amount: number;
+  bookingId: string;
+  bookingType: string;
+  cashfreeOrderId: string | null;
+  cashfreePaymentId: string | null;
+  cashfreePaymentStatus: string | null;
+  createdAt: Date;
+  customerDetails: {
+    customer_email: string;
+    customer_id: string;
+    customer_name: string;
+    customer_phone: string;
+  };
+  date: string;
+  email: string | null;
+  expiresAt: Date;
+  fullName: string;
+  mobile: string;
+  paymentStatus: string;
+  speedMeter: boolean;
+  speedMeterPrice: number;
+  sportType: string;
+  status: string;
+  timeSlots: string[];
+  updatedAt: Date;
+}
+
+interface SlotUpdateData {
+  date: string;
+  sportType: string;
+  timeSlot: string;
+  action: 'booked' | 'freed' | 'blocked' | 'expired';
+  booking?: BookingData;
+}
+
 interface WebSocketMessage {
-  type: 'slot_update' | 'booking_confirmed' | 'slot_blocked' | 'system_message';
+  type: 'slot_update' | 'booking_confirmed' | 'slot_blocked' | 'slot_freed' | 'booking_expired' | 'system_message';
   data: any;
   timestamp: number;
 }
 
 interface UseWebSocketOptions {
-  onSlotUpdate?: (data: any) => void;
-  onBookingConfirmed?: (data: any) => void;
+  onSlotUpdate?: (data: SlotUpdateData) => void;
+  onBookingConfirmed?: (data: BookingData) => void;
   onSlotBlocked?: (data: any) => void;
+  onSlotFreed?: (data: any) => void;
+  onBookingExpired?: (data: BookingData) => void;
   onSystemMessage?: (data: any) => void;
   autoReconnect?: boolean;
   reconnectInterval?: number;
@@ -21,9 +59,11 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     onSlotUpdate,
     onBookingConfirmed,
     onSlotBlocked,
+    onSlotFreed,
+    onBookingExpired,
     onSystemMessage,
     autoReconnect = true,
-    reconnectInterval = 10000 // Increased from 5000 to 10000
+    reconnectInterval = 10000
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
@@ -59,10 +99,11 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
         setConnectionError(null);
         
         // Send authentication if needed
-        if (localStorage.getItem('authToken')) {
+        const authToken = localStorage.getItem('authToken');
+        if (authToken) {
           ws.send(JSON.stringify({
             type: 'auth',
-            token: localStorage.getItem('authToken')
+            token: authToken
           }));
         }
       };
@@ -77,21 +118,41 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
             case 'slot_update':
               onSlotUpdate?.(message.data);
               break;
+              
             case 'booking_confirmed':
               onBookingConfirmed?.(message.data);
               toast({
-                title: 'Booking Update',
-                description: 'A new booking has been confirmed.',
+                title: 'New Booking',
+                description: `Booking confirmed for ${message.data.customerDetails?.customer_name || message.data.fullName}`,
               });
               break;
+              
             case 'slot_blocked':
               onSlotBlocked?.(message.data);
               toast({
                 title: 'Slot Blocked',
-                description: 'A time slot has been blocked by admin.',
+                description: `Time slot ${message.data.timeSlot} has been blocked by admin.`,
                 variant: 'destructive',
               });
               break;
+              
+            case 'slot_freed':
+              onSlotFreed?.(message.data);
+              toast({
+                title: 'Slot Available',
+                description: `Time slot ${message.data.timeSlot} is now available.`,
+              });
+              break;
+              
+            case 'booking_expired':
+              onBookingExpired?.(message.data);
+              toast({
+                title: 'Booking Expired',
+                description: `Booking ${message.data.bookingId} has expired and slot is now available.`,
+                variant: 'destructive',
+              });
+              break;
+              
             case 'system_message':
               onSystemMessage?.(message.data);
               toast({
@@ -99,6 +160,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
                 description: message.data.message,
               });
               break;
+              
             default:
               console.log('Unknown WebSocket message type:', message.type);
           }
@@ -131,7 +193,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
       setConnectionError('Failed to establish connection');
       setIsConnecting(false);
     }
-  }, [autoReconnect, reconnectInterval, onSlotUpdate, onBookingConfirmed, onSlotBlocked, onSystemMessage, toast]);
+  }, [autoReconnect, reconnectInterval, onSlotUpdate, onBookingConfirmed, onSlotBlocked, onSlotFreed, onBookingExpired, onSystemMessage, toast]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -151,22 +213,45 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
 
   const sendMessage = useCallback((message: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+      wsRef.current.send(JSON.stringify({
+        ...message,
+        timestamp: Date.now()
+      }));
       return true;
     }
+    console.warn('WebSocket not connected, message not sent:', message);
     return false;
   }, []);
 
   const subscribeToSlots = useCallback((date: string, sportType: string) => {
-    sendMessage({
+    const success = sendMessage({
       type: 'subscribe_slots',
       data: { date, sportType }
     });
+    
+    if (success) {
+      console.log(`Subscribed to slots for ${sportType} on ${date}`);
+    }
+    
+    return success;
   }, [sendMessage]);
 
   const unsubscribeFromSlots = useCallback((date: string, sportType: string) => {
-    sendMessage({
+    const success = sendMessage({
       type: 'unsubscribe_slots',
+      data: { date, sportType }
+    });
+    
+    if (success) {
+      console.log(`Unsubscribed from slots for ${sportType} on ${date}`);
+    }
+    
+    return success;
+  }, [sendMessage]);
+
+  const refreshSlots = useCallback((date: string, sportType: string) => {
+    return sendMessage({
+      type: 'refresh_slots',
       data: { date, sportType }
     });
   }, [sendMessage]);
@@ -187,6 +272,17 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     };
   }, [disconnect]);
 
+  // Add ping/pong for connection health
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const pingInterval = setInterval(() => {
+      sendMessage({ type: 'ping' });
+    }, 30000); // Ping every 30 seconds
+
+    return () => clearInterval(pingInterval);
+  }, [isConnected, sendMessage]);
+
   return {
     isConnected,
     isConnecting,
@@ -196,6 +292,7 @@ export const useWebSocket = (options: UseWebSocketOptions = {}) => {
     disconnect,
     sendMessage,
     subscribeToSlots,
-    unsubscribeFromSlots
+    unsubscribeFromSlots,
+    refreshSlots
   };
-}; 
+};
