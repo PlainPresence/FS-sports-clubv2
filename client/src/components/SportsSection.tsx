@@ -108,7 +108,7 @@ export default function SportsSection() {
         >
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-4 sm:mb-6">
             <img
-              src="/icons/icon-512x512.png"
+              src="/icons/icon-192x192.png"
               alt="FS Sports Club Logo"
               className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
               style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.15))' }}
