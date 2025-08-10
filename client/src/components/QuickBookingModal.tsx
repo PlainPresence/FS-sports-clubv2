@@ -97,7 +97,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
       
-      // Create booking data in exact Firebase structure
+      // Store timeSlot in AM/PM format for backend and WebSocket consistency
       const bookingData = {
         amount: formData.amount + (formData.speedMeter ? formData.speedMeterPrice || 100 : 0),
         bookingId: bookingId,
@@ -122,7 +122,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         speedMeterPrice: formData.speedMeter ? (formData.speedMeterPrice || 100) : 0,
         sportType: formData.sportType,
         status: "confirmed",
-        timeSlots: [convertToAmPmFormat(formData.timeSlot)],
+        timeSlots: [convertToAmPmFormat(formData.timeSlot)], // AM/PM format
         updatedAt: now
       };
 
