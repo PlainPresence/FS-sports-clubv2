@@ -107,7 +107,12 @@ export default function SportsSection() {
           viewport={{ once: true }}
         >
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-4 sm:mb-6">
-            <i className="fas fa-trophy text-xl sm:text-2xl text-primary"></i>
+            <img
+              src="/icons/icon-512x512.png"
+              alt="FS Sports Club Logo"
+              className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
+              style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.15))' }}
+            />
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">Our Premium Facilities</h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
