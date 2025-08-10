@@ -111,7 +111,12 @@ export default function HeroSection({ onBookNowClick }: HeroSectionProps) {
             transition={{ duration: 0.8, delay: 0.5 }}
           >
             <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-              <i className="fas fa-trophy text-white text-xl"></i>
+              <img
+                src="/icons/icon-192x192.png"
+                alt="FS Sports Club Logo"
+                className="w-10 h-10 object-contain"
+                style={{ filter: 'drop-shadow(0 2px 8px rgba(239,68,68,0.15))' }}
+              />
             </div>
             <h3 className="text-lg font-bold text-white mb-2">Pro Facilities</h3>
             <p className="text-gray-300 text-sm leading-relaxed">Professional-grade equipment and premium playing surfaces</p>
