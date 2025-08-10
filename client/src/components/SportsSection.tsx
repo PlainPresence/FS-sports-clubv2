@@ -110,7 +110,7 @@ export default function SportsSection() {
             <img
               src="/icons/icon-512x512.png"
               alt="FS Sports Club Logo"
-              className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
+              className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
               style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.15))' }}
             />
           </div>
