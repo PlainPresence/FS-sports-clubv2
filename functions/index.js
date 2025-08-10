@@ -27,6 +27,29 @@ exports.cleanOldBookings = functions.pubsub.schedule('every 24 hours').onRun(asy
 
   if (deletedBookings > 0) await bookingsBatch.commit();
 
+  // Clean up slotAvailability for deleted bookings
+  if (deletedBookings > 0) {
+    const slotAvailSnap = await db.collection('slotAvailability').get();
+    const slotAvailBatch = db.batch();
+    slotAvailSnap.forEach(doc => {
+      const slot = doc.data();
+      // Check if there is still a valid booking for this slot
+      const stillBooked = bookingsSnap.docs.some(bdoc => {
+        const bdata = bdoc.data();
+        if (bdata.status !== 'confirmed' || bdata.paymentStatus !== 'success') return false;
+        if (bdata.date !== slot.date || bdata.sportType !== slot.sportType) return false;
+        if (Array.isArray(bdata.timeSlots)) {
+          return bdata.timeSlots.includes(slot.timeSlot);
+        }
+        return bdata.timeSlot === slot.timeSlot;
+      });
+      if (!stillBooked) {
+        slotAvailBatch.delete(doc.ref);
+      }
+    });
+    await slotAvailBatch.commit();
+  }
+
   // Clean tournament bookings
   const tournamentSnap = await db.collection('tournamentBookings').get();
   let deletedTournamentBookings = 0;
@@ -49,4 +72,4 @@ exports.cleanOldBookings = functions.pubsub.schedule('every 24 hours').onRun(asy
 
   console.log(`Deleted ${deletedBookings} regular bookings and ${deletedTournamentBookings} tournament bookings older than 5 days.`);
   return null;
-}); 
+});
