@@ -9,24 +9,36 @@ import axios from 'axios';
 import type { Request, Response } from 'express';
 
 // Export the webhook handler for use in index.ts
+// Helper to pad hour for 12h time with leading zero
+function pad12h(s: string): string {
+  const [h, rest] = s.split(':');
+  return h.padStart(2, '0') + ':' + rest;
+}
+// Helper to convert 24h to 12h with leading zero
+function to12h(t: string): string {
+  const [hStr, m] = t.split(':');
+  let hNum = parseInt(hStr, 10);
+  const ampm = hNum >= 12 ? 'PM' : 'AM';
+  hNum = hNum % 12;
+  if (hNum === 0) hNum = 12;
+  return `${hNum.toString().padStart(2, '0')}:${m} ${ampm}`;
+}
+// Helper to normalize a time slot string to 'hh:mm AM/PM - hh:mm AM/PM' with leading zero
+function normalizeTimeSlot(slot: string): string {
+  // If already in correct format, reformat to ensure leading zero
+  if (/AM|PM|am|pm/.test(slot)) {
+    // e.g. '7:00 PM - 8:00 PM' => '07:00 PM - 08:00 PM'
+    const [start, end] = slot.split(' - ');
+    if (start && end) return `${pad12h(start)} - ${pad12h(end)}`;
+    return slot;
+  }
+  // Convert 'HH:mm-HH:mm' to 'hh:mm AM/PM - hh:mm AM/PM'
+  const [start, end] = slot.split('-');
+  if (start && end) return `${to12h(start)} - ${to12h(end)}`;
+  return slot;
+}
+
 export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
-    // Helper to normalize a time slot string to 'hh:mm AM/PM - hh:mm AM/PM'
-    function normalizeTimeSlot(slot: string): string {
-      // Already in correct format
-      if (/AM|PM|am|pm/.test(slot)) return slot;
-      // Convert 'HH:mm-HH:mm' to 'hh:mm AM/PM - hh:mm AM/PM'
-      const [start, end] = slot.split('-');
-      function to12h(t: string): string {
-        const [hStr, m] = t.split(':');
-        let hNum = parseInt(hStr, 10);
-        const ampm = hNum >= 12 ? 'PM' : 'AM';
-        hNum = hNum % 12;
-        if (hNum === 0) hNum = 12;
-        return `${hNum.toString().padStart(2, '0')}:${m} ${ampm}`;
-      }
-      if (start && end) return `${to12h(start)} - ${to12h(end)}`;
-      return slot;
-    }
 
   try {
     // Use the raw body (Buffer) for signature verification
@@ -125,7 +137,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
 
       // Check if booking already exists for this orderId (inside transaction)
       let bookingData: any = null;
-      await firestore.runTransaction(async (transaction) => {
+  await firestore.runTransaction(async (transaction: any) => {
         const existing = await transaction.get(
           firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id)
         );
@@ -148,7 +160,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
             .where('paymentStatus', '==', 'success')
         );
         
-        const bookedSlots: string[] = existingBookings.docs.flatMap(doc => {
+        const bookedSlots: string[] = existingBookings.docs.flatMap((doc: any) => {
           const data = doc.data();
           console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
           const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
@@ -197,11 +209,13 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
         if (bookingData.date && bookingData.timeSlots && bookingData.sportType) {
           const timeSlots = Array.isArray(bookingData.timeSlots) ? bookingData.timeSlots : [bookingData.timeSlots];
           for (const timeSlot of timeSlots) {
-            const slotAvailabilityRef = firestore.collection('slotAvailability').doc();
+            const normalizedSlot = normalizeTimeSlot(timeSlot);
+            const slotDocId = `${bookingData.date}_${bookingData.sportType}_${normalizedSlot}`.replace(/[^a-zA-Z0-9_]/g, '_');
+            const slotAvailabilityRef = firestore.collection('slotAvailability').doc(slotDocId);
             transaction.set(slotAvailabilityRef, {
               date: bookingData.date,
               sportType: bookingData.sportType,
-              timeSlot: timeSlot,
+              timeSlot: normalizedSlot,
               status: 'booked',
               bookingId: bookingData.bookingId || bookingData.cashfreeOrderId,
               lastUpdated: admin.firestore.FieldValue.serverTimestamp()
@@ -272,17 +286,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.set('wsManager', wsManager);
 
   // Health check endpoint
-  app.get('/api/health', (req, res) => {
+  app.get('/api/health', (req: any, res: any) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
   // WebSocket stats endpoint
-  app.get('/api/ws/stats', (req, res) => {
+  app.get('/api/ws/stats', (req: any, res: any) => {
     res.json(wsManager.getStats());
   });
 
   // Cashfree: Create payment session endpoint
-  app.post('/api/cashfree/create-session', async (req, res) => {
+  app.post('/api/cashfree/create-session', async (req: any, res: any) => {
     const { orderId, amount, customerDetails, slotInfo } = req.body;
     
     // Check for required env variables
@@ -333,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API endpoint to fetch booking by cashfreeOrderId
-  app.get('/api/booking/by-cashfree-order', async (req, res) => {
+  app.get('/api/booking/by-cashfree-order', async (req: any, res: any) => {
     const { orderId } = req.query;
     if (!orderId) return res.status(400).json({ success: false, error: 'Missing orderId' });
     
@@ -358,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API endpoint to fetch slot availability with WebSocket integration
-  app.get('/api/slots/availability', async (req, res) => {
+  app.get('/api/slots/availability', async (req: any, res: any) => {
     const { date, sportType } = req.query;
     if (!date || !sportType) {
       return res.status(400).json({ success: false, error: 'Missing date or sportType' });
@@ -386,21 +400,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .get();
       
       // Extract booked slots from timeSlots arrays (updated structure)
-      const bookedSlots = bookedSlotsSnapshot.docs.flatMap(doc => {
+      const bookedSlots = bookedSlotsSnapshot.docs.flatMap((doc: any) => {
         const data = doc.data();
         if (data.timeSlots && Array.isArray(data.timeSlots)) {
-          return data.timeSlots;
+          return data.timeSlots.map(normalizeTimeSlot);
         }
-        return data.timeSlot ? [data.timeSlot] : [];
+        return data.timeSlot ? [normalizeTimeSlot(data.timeSlot)] : [];
       });
       
-      const blockedSlots = blockedSlotsSnapshot.docs.map(doc => doc.data().timeSlot);
-      const slotAvailability = slotAvailabilitySnapshot.docs.map(doc => doc.data());
+      const blockedSlots = blockedSlotsSnapshot.docs.map((doc: any) => normalizeTimeSlot(doc.data().timeSlot));
+      const slotAvailability = slotAvailabilitySnapshot.docs.map((doc: any) => ({
+        ...doc.data(),
+        timeSlot: normalizeTimeSlot(doc.data().timeSlot)
+      }));
       
       return res.json({
         success: true,
         slots: slotAvailability,
-        bookedSlots: [...new Set(bookedSlots)], // Remove duplicates
+  bookedSlots: Array.from(new Set(bookedSlots)), // Remove duplicates
         blockedSlots,
         date,
         sportType
@@ -412,7 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Book slot endpoint with WebSocket integration
-  app.post('/api/book-slot', async (req, res) => {
+  app.post('/api/book-slot', async (req: any, res: any) => {
     const {
       date,
       sportType,
@@ -426,9 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       let createdBooking: any = null;
+      // Normalize all time slots for this booking
+      const normalizedTimeSlots = timeSlots.map(normalizeTimeSlot);
       
       // Use Firestore transaction for atomic slot booking
-      await firestore.runTransaction(async (transaction) => {
+  await firestore.runTransaction(async (transaction: any) => {
         // 1. Check for duplicate bookingId
         const existingBookingSnap = await transaction.get(
           firestore.collection('bookings').where('bookingId', '==', bookingData.bookingId)
@@ -445,12 +464,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where('status', '==', 'confirmed');
         const bookingsSnapshot = await transaction.get(bookingsQuery);
         
-        const bookedSlots = bookingsSnapshot.docs.flatMap((doc) => {
+        const bookedSlots = bookingsSnapshot.docs.flatMap((doc: any) => {
           const data = doc.data();
-          return Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot];
+          return Array.isArray(data.timeSlots) ? data.timeSlots.map(normalizeTimeSlot) : [normalizeTimeSlot(data.timeSlot)];
         });
         
-        for (const slot of timeSlots) {
+        for (const slot of normalizedTimeSlots) {
           if (bookedSlots.includes(slot)) {
             throw new Error(`Slot ${slot} already booked.`);
           }
@@ -461,9 +480,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where('date', '==', date)
           .where('sportType', '==', sportType);
         const blockedSlotsSnapshot = await transaction.get(blockedSlotsQuery);
-        const blockedSlots = blockedSlotsSnapshot.docs.map((doc) => doc.data().timeSlot);
+  const blockedSlots = blockedSlotsSnapshot.docs.map((doc: any) => normalizeTimeSlot(doc.data().timeSlot));
         
-        for (const slot of timeSlots) {
+        for (const slot of normalizedTimeSlots) {
           if (blockedSlots.includes(slot)) {
             throw new Error(`Slot ${slot} is blocked.`);
           }
@@ -481,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookingRef = firestore.collection('bookings').doc();
         createdBooking = {
           ...bookingData,
-          timeSlots,
+          timeSlots: normalizedTimeSlots,
           sportType,
           date,
           paymentStatus: 'success',
@@ -494,8 +513,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transaction.set(bookingRef, createdBooking);
 
         // Update slotAvailability for each booked slot
-        if (date && timeSlots && sportType) {
-          for (const timeSlot of timeSlots) {
+        if (date && normalizedTimeSlots && sportType) {
+          for (const timeSlot of normalizedTimeSlots) {
             // Use a deterministic doc id for easy cleanup: `${date}_${sportType}_${timeSlot}`
             const slotDocId = `${date}_${sportType}_${timeSlot}`.replace(/[^a-zA-Z0-9_]/g, '_');
             const slotAvailabilityRef = firestore.collection('slotAvailability').doc(slotDocId);
@@ -549,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoint to block slots with WebSocket notification
-  app.post('/api/admin/block-slot', async (req, res) => {
+  app.post('/api/admin/block-slot', async (req: any, res: any) => {
     const { date, sportType, timeSlot, reason } = req.body;
     
     if (!date || !sportType || !timeSlot) {
@@ -578,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoint to unblock/free slots with WebSocket notification
-  app.post('/api/admin/free-slot', async (req, res) => {
+  app.post('/api/admin/free-slot', async (req: any, res: any) => {
     const { date, sportType, timeSlot } = req.body;
     
     if (!date || !sportType || !timeSlot) {
@@ -594,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .get();
       
       const batch = firestore.batch();
-      blockedQuery.docs.forEach(doc => batch.delete(doc.ref));
+  blockedQuery.docs.forEach((doc: any) => batch.delete(doc.ref));
       await batch.commit();
       
       // Broadcast slot freed via WebSocket
@@ -610,7 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint to manually check and process expired bookings
-  app.post('/api/admin/process-expired-bookings', async (req, res) => {
+  app.post('/api/admin/process-expired-bookings', async (req: any, res: any) => {
     try {
       const now = admin.firestore.Timestamp.now();
       const expiredQuery = await firestore.collection('bookings')
@@ -622,10 +641,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expiredBookings: any[] = [];
       const batch = firestore.batch();
       
-      expiredQuery.docs.forEach(doc => {
+      expiredQuery.docs.forEach((doc: any) => {
         const bookingData = { id: doc.id, ...doc.data() };
         expiredBookings.push(bookingData);
-        
         // Update status to expired
         batch.update(doc.ref, {
           status: 'expired',
@@ -660,7 +678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test endpoint to create a booking manually (for testing)
-  app.post('/api/test/create-booking', async (req, res) => {
+  app.post('/api/test/create-booking', async (req: any, res: any) => {
     try {
       const { orderId, amount, customerDetails, slotInfo } = req.body;
       
@@ -714,7 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket endpoint to send system messages
-  app.post('/api/admin/send-system-message', async (req, res) => {
+  app.post('/api/admin/send-system-message', async (req: any, res: any) => {
     const { message, level } = req.body;
     
     if (!message) {
@@ -737,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced booking management endpoints with WebSocket integration
 
   // Get all bookings with real-time updates capability
-  app.get('/api/bookings', async (req, res) => {
+  app.get('/api/bookings', async (req: any, res: any) => {
     const { date, status, search, limit = 50, offset = 0 } = req.query;
     
     try {
@@ -762,7 +780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const snapshot = await query.get();
-      let bookings = snapshot.docs.map(doc => ({
+      let bookings = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate(),
@@ -796,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update booking status with WebSocket notification
-  app.patch('/api/bookings/:bookingId', async (req, res) => {
+  app.patch('/api/bookings/:bookingId', async (req: any, res: any) => {
     const { bookingId } = req.params;
     const updates = req.body;
     
@@ -852,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get booking analytics
-  app.get('/api/analytics/bookings', async (req, res) => {
+  app.get('/api/analytics/bookings', async (req: any, res: any) => {
     const { startDate, endDate, sportType } = req.query;
     
     try {
@@ -871,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const snapshot = await query.get();
-      const bookings = snapshot.docs.map(doc => doc.data());
+  const bookings = snapshot.docs.map((doc: any) => doc.data());
       
       const analytics = {
         totalBookings: bookings.length,
@@ -909,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!expiredQuery.empty) {
         const batch = firestore.batch();
-        expiredQuery.docs.forEach(doc => batch.delete(doc.ref));
+  expiredQuery.docs.forEach((doc: any) => batch.delete(doc.ref));
         await batch.commit();
         console.log(`Cleaned up ${expiredQuery.docs.length} expired temp bookings`);
       }
@@ -936,10 +954,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batch = firestore.batch();
         const expiredBookings: any[] = [];
         
-        expiredQuery.docs.forEach(doc => {
+        expiredQuery.docs.forEach((doc: any) => {
           const bookingData = { id: doc.id, ...doc.data() };
           expiredBookings.push(bookingData);
-          
           batch.update(doc.ref, {
             status: 'expired',
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -972,7 +989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setInterval(checkAndProcessExpiredBookings, 5 * 60 * 1000);
 
   // WebSocket connection test endpoint
-  app.get('/api/ws/test', (req, res) => {
+  app.get('/api/ws/test', (req: any, res: any) => {
     const { message, type = 'system_message' } = req.query;
     
     if (wsManager) {
