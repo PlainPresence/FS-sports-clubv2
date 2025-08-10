@@ -99,7 +99,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Email</h3>
-                <p className="text-gray-600">bookings@sportsturfpro.com<br />info@sportsturfpro.com</p>
+                <p className="text-gray-600">fssportsclub7@sgmail.com</p>
               </div>
             </div>
 
@@ -109,7 +109,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Operating Hours</h3>
-                <p className="text-gray-600">Mon - Sun: 6:00 AM - 11:00 PM<br />Booking: 24/7 Online</p>
+                <p className="text-gray-600">Mon - Sun: 24/7 available<br />Booking: 24/7 Online</p>
               </div>
             </div>
           </motion.div>
