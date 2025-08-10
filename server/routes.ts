@@ -491,8 +491,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiresAt: admin.firestore.FieldValue.serverTimestamp(), // Set to current time since it's confirmed
           id: bookingRef.id
         };
-        
         transaction.set(bookingRef, createdBooking);
+
+        // Update slotAvailability for each booked slot
+        if (date && timeSlots && sportType) {
+          for (const timeSlot of timeSlots) {
+            // Use a deterministic doc id for easy cleanup: `${date}_${sportType}_${timeSlot}`
+            const slotDocId = `${date}_${sportType}_${timeSlot}`.replace(/[^a-zA-Z0-9_]/g, '_');
+            const slotAvailabilityRef = firestore.collection('slotAvailability').doc(slotDocId);
+            transaction.set(slotAvailabilityRef, {
+              date,
+              sportType,
+              timeSlot,
+              status: 'booked',
+              bookingId: bookingData.bookingId,
+              lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
       });
       
       // 6. Broadcast updates via WebSocket
