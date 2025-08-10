@@ -93,22 +93,37 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
 
     setIsProcessing(true);
     try {
+      const bookingId = generateBookingId();
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+      
+      // Create booking data in exact Firebase structure
       const bookingData = {
-        bookingId: generateBookingId(),
+        amount: formData.amount + (formData.speedMeter ? formData.speedMeterPrice || 100 : 0),
+        bookingId: bookingId,
+        bookingType: "regular",
+        cashfreeOrderId: null, // Admin bookings don't have payment gateway data
+        cashfreePaymentId: null,
+        cashfreePaymentStatus: null,
+        createdAt: now,
+        customerDetails: {
+          customer_email: formData.email || "",
+          customer_id: bookingId,
+          customer_name: formData.fullName,
+          customer_phone: formData.mobile
+        },
+        date: formData.date,
+        email: formData.email || null,
+        expiresAt: expiresAt,
         fullName: formData.fullName,
         mobile: formData.mobile,
-        email: formData.email || '',
-        sportType: formData.sportType,
-        date: formData.date,
-        timeSlot: formData.timeSlot, // raw value
-        timeSlots: [convertToAmPmFormat(formData.timeSlot)], // formatted value for DB
-        amount: formData.amount,
+        paymentStatus: "success", // Admin bookings are automatically successful
         speedMeter: formData.speedMeter,
-        speedMeterPrice: formData.speedMeterPrice,
-        paymentStatus: 'success',
-        bookingDate: new Date(),
-        status: 'confirmed',
-        isAdminBooking: true,
+        speedMeterPrice: formData.speedMeter ? (formData.speedMeterPrice || 100) : 0,
+        sportType: formData.sportType,
+        status: "confirmed",
+        timeSlots: [convertToAmPmFormat(formData.timeSlot)],
+        updatedAt: now
       };
 
       const result = await fetch('/api/book-slot', {
@@ -118,19 +133,39 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
           date: bookingData.date,
           sportType: bookingData.sportType,
           timeSlots: bookingData.timeSlots,
-          bookingData,
+          bookingData: bookingData,
+          isAdminBooking: true
         }),
       }).then(res => res.json());
 
       if (result.success) {
+        // Send email confirmation if email provided
         if (formData.email) {
-          await sendBookingConfirmation(bookingData);
+          try {
+            await sendBookingConfirmation({
+              ...bookingData,
+              timeSlot: formData.timeSlot // Keep original format for email
+            });
+          } catch (emailError) {
+            console.warn('Email confirmation failed:', emailError);
+            // Don't fail the booking if email fails
+          }
         }
-        sendWhatsAppNotification(bookingData);
+
+        // Send WhatsApp notification
+        try {
+          sendWhatsAppNotification({
+            ...bookingData,
+            timeSlot: formData.timeSlot // Keep original format for WhatsApp
+          });
+        } catch (whatsappError) {
+          console.warn('WhatsApp notification failed:', whatsappError);
+          // Don't fail the booking if WhatsApp fails
+        }
 
         toast({
           title: 'Booking Created Successfully!',
-          description: `Booking ID: ${bookingData.bookingId}. WhatsApp confirmation sent to customer.`,
+          description: `Booking ID: ${bookingData.bookingId}. Customer notifications sent.`,
         });
 
         onSuccess();
@@ -231,6 +266,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
                   id="sportType"
                   value={formData.sportType}
                   onChange={(e) => handleInputChange('sportType', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   {sports.map((sport) => (
@@ -256,6 +292,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
                   id="timeSlot"
                   value={formData.timeSlot}
                   onChange={(e) => handleInputChange('timeSlot', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="">Select time slot</option>
@@ -275,7 +312,14 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
                   type="checkbox"
                   id="speedMeter"
                   checked={formData.speedMeter}
-                  onChange={(e) => handleInputChange('speedMeter', e.target.checked)}
+                  onChange={(e) => {
+                    handleInputChange('speedMeter', e.target.checked);
+                    if (e.target.checked) {
+                      handleInputChange('speedMeterPrice', 100);
+                    } else {
+                      handleInputChange('speedMeterPrice', 0);
+                    }
+                  }}
                 />
                 <Label htmlFor="speedMeter">Speed Meter Add-on (₹100)</Label>
               </div>
@@ -283,10 +327,11 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="amount">Amount (₹) *</Label>
+                <Label htmlFor="amount">Base Amount (₹) *</Label>
                 <Input
                   id="amount"
                   type="number"
+                  min="1"
                   value={formData.amount}
                   onChange={(e) => handleInputChange('amount', Number(e.target.value))}
                   required
@@ -294,9 +339,9 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
               </div>
               <div className="flex items-end">
                 <div className="w-full p-3 bg-primary/10 rounded-lg">
-                  <div>Total Amount</div>
+                  <div className="text-sm text-gray-600">Total Amount</div>
                   <div className="text-xl font-bold text-primary">
-                    ₹{formData.amount + (formData.speedMeter ? 100 : 0)}
+                    ₹{formData.amount + (formData.speedMeter ? (formData.speedMeterPrice || 100) : 0)}
                   </div>
                 </div>
               </div>
