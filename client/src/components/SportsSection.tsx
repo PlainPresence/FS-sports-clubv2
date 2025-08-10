@@ -42,32 +42,36 @@ const sports: SportInfo[] = [
 // Custom SVG icons for each sport
 const SportIcons = {
   cricket: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
-      <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z"/>
-      <circle cx="12" cy="12" r="3" fill="white"/>
+    <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="24" cy="24" r="22" fill="#F5F5F5"/>
+      <rect x="30" y="10" width="4" height="28" rx="2" fill="#E57300"/>
+      <rect x="14" y="34" width="20" height="4" rx="2" fill="#388E3C"/>
+      <circle cx="24" cy="24" r="6" fill="#FFD600" stroke="#E57300" strokeWidth="2"/>
     </svg>
   ),
   snooker: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
-      <circle cx="12" cy="12" r="8"/>
-      <circle cx="12" cy="12" r="4" fill="white"/>
-      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="24" cy="24" r="22" fill="#F5F5F5"/>
+      <circle cx="24" cy="24" r="10" fill="#C62828"/>
+      <circle cx="24" cy="24" r="4" fill="#FFF"/>
+      <circle cx="24" cy="24" r="2" fill="#212121"/>
     </svg>
   ),
   pool: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
-      <circle cx="12" cy="12" r="6"/>
-      <circle cx="12" cy="12" r="2" fill="white"/>
-      <circle cx="12" cy="12" r="0.8" fill="currentColor"/>
+    <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="24" cy="24" r="22" fill="#F5F5F5"/>
+      <circle cx="24" cy="24" r="10" fill="#1976D2"/>
+      <circle cx="24" cy="24" r="4" fill="#FFF"/>
+      <text x="24" y="28" textAnchor="middle" fontSize="6" fill="#212121" fontWeight="bold">8</text>
     </svg>
   ),
   airhockey: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 sm:w-10 sm:h-10">
-      <rect x="2" y="2" width="20" height="20" rx="3" ry="3"/>
-      <circle cx="7" cy="7" r="2" fill="white"/>
-      <circle cx="17" cy="17" r="2" fill="white"/>
-      <line x1="12" y1="2" x2="12" y2="22" stroke="white" strokeWidth="1.5"/>
-      <line x1="2" y1="12" x2="22" y2="12" stroke="white" strokeWidth="1.5"/>
+    <svg viewBox="0 0 48 48" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
+      <circle cx="24" cy="24" r="22" fill="#F5F5F5"/>
+      <rect x="12" y="20" width="24" height="8" rx="4" fill="#7C4DFF"/>
+      <circle cx="16" cy="24" r="2" fill="#FFF"/>
+      <circle cx="32" cy="24" r="2" fill="#FFF"/>
+      <circle cx="24" cy="24" r="2" fill="#212121"/>
     </svg>
   ),
 };
@@ -108,7 +112,7 @@ export default function SportsSection() {
         >
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-4 sm:mb-6">
             <img
-              src="/icons/icon-192x192.png"
+              src="/icons/icon-512x512.png"
               alt="FS Sports Club Logo"
               className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
               style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.15))' }}
