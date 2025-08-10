@@ -59,7 +59,12 @@ export default function Home() {
               {/* Header */}
               <div className="text-center mb-12 sm:mb-16">
                 <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl shadow-lg mb-6">
-                  <i className="fas fa-trophy text-white text-2xl sm:text-3xl"></i>
+                  <img
+                    src="/icons/icon-512x512.png"
+                    alt="FS Sports Club Logo"
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                    style={{ filter: 'drop-shadow(0 2px 8px rgba(16,185,129,0.15))' }}
+                  />
                 </div>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
                   About Our <span className="text-primary">Premium Turf</span>
