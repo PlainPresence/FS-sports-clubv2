@@ -36,6 +36,7 @@ const convertToAmPmFormat = (slot: string) => {
     let [hour, minute] = time.split(':').map(Number);
     const period = hour >= 12 ? 'PM' : 'AM';
     hour = hour % 12 || 12;
+    // Do NOT pad hour with zero
     return `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
   };
   return `${formatTime(start)} - ${formatTime(end)}`;
@@ -122,7 +123,7 @@ export default function QuickBookingModal({ isOpen, onClose, onSuccess }: QuickB
         speedMeterPrice: formData.speedMeter ? (formData.speedMeterPrice || 100) : 0,
         sportType: formData.sportType,
         status: "confirmed",
-        timeSlots: [convertToAmPmFormat(formData.timeSlot)], // AM/PM format
+        timeSlots: [convertToAmPmFormat(formData.timeSlot)], // Always normalized
         updatedAt: now
       };
 
