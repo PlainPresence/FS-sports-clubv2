@@ -1,7 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
-import { db } from './firebase'; // Assume you have Firebase admin initialized
-import { collection, query, where, onSnapshot, Timestamp, doc, updateDoc } from 'firebase/firestore';
 
 interface WebSocketClient extends WebSocket {
   isAlive: boolean;
@@ -22,7 +20,7 @@ interface BookingData {
   cashfreeOrderId: string | null;
   cashfreePaymentId: string | null;
   cashfreePaymentStatus: string | null;
-  createdAt: Timestamp;
+  createdAt: Date;
   customerDetails: {
     customer_email: string;
     customer_id: string;
@@ -31,7 +29,7 @@ interface BookingData {
   };
   date: string;
   email: string | null;
-  expiresAt: Timestamp;
+  expiresAt: Date;
   fullName: string;
   mobile: string;
   paymentStatus: string;
@@ -40,7 +38,7 @@ interface BookingData {
   sportType: string;
   status: string;
   timeSlots: string[];
-  updatedAt: Timestamp;
+  updatedAt: Date;
 }
 
 interface SlotData {
@@ -55,13 +53,11 @@ class WebSocketManager {
   private wss: WebSocketServer;
   private clients: Map<string, WebSocketClient> = new Map();
   private subscriptions: Map<string, Set<string>> = new Map(); // topic -> clientIds
-  private firebaseListeners: Map<string, () => void> = new Map(); // topic -> unsubscribe function
   private expirationTimers: Map<string, NodeJS.Timeout> = new Map(); // bookingId -> timer
 
   constructor(server: Server) {
     this.wss = new WebSocketServer({ server });
     this.setupWebSocketServer();
-    this.startExpirationChecker();
   }
 
   private setupWebSocketServer() {
@@ -111,7 +107,7 @@ class WebSocketManager {
         wsClient.isAlive = false;
         wsClient.ping();
       });
-    }, 30000); // Check every 30 seconds
+    }, 30000);
   }
 
   private generateClientId(): string {
@@ -150,7 +146,6 @@ class WebSocketManager {
   private handleAuth(clientId: string, data: any) {
     const client = this.clients.get(clientId);
     if (client && data.token) {
-      // In a real app, you'd verify the token here
       client.userId = data.userId || 'anonymous';
       console.log(`Client ${clientId} authenticated as ${client.userId}`);
     }
@@ -166,14 +161,10 @@ class WebSocketManager {
       
       if (!this.subscriptions.has(topic)) {
         this.subscriptions.set(topic, new Set());
-        this.setupFirebaseListener(date, sportType);
       }
       this.subscriptions.get(topic)!.add(clientId);
       
       console.log(`Client ${clientId} subscribed to ${topic}`);
-      
-      // Send current slot data immediately
-      this.sendCurrentSlotData(date, sportType);
     }
   }
 
@@ -190,7 +181,6 @@ class WebSocketManager {
         topicSubscribers.delete(clientId);
         if (topicSubscribers.size === 0) {
           this.subscriptions.delete(topic);
-          this.removeFirebaseListener(topic);
         }
       }
       
@@ -200,150 +190,8 @@ class WebSocketManager {
 
   private handleRefreshSlots(clientId: string, data: any) {
     const { date, sportType } = data;
-    this.sendCurrentSlotData(date, sportType);
-  }
-
-  private setupFirebaseListener(date: string, sportType: string) {
-    const topic = `slots_${date}_${sportType}`;
-    
-    // Query for bookings on this date and sport type
-    const bookingsQuery = query(
-      collection(db, 'bookings'),
-      where('date', '==', date),
-      where('sportType', '==', sportType)
-    );
-
-    const unsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
-      console.log(`Firebase update for ${topic}, ${snapshot.docs.length} bookings`);
-      
-      const bookings: BookingData[] = [];
-      snapshot.docChanges().forEach((change) => {
-        const booking = change.doc.data() as BookingData;
-        
-        if (change.type === 'added' || change.type === 'modified') {
-          bookings.push(booking);
-          
-          // Handle booking expiration
-          if (booking.expiresAt && booking.status !== 'confirmed') {
-            this.scheduleBookingExpiration(booking);
-          }
-          
-          // Broadcast booking events
-          if (change.type === 'added' && booking.status === 'confirmed') {
-            this.sendBookingConfirmed(booking);
-          }
-        }
-        
-        if (change.type === 'removed') {
-          this.sendSlotFreed(date, sportType, booking.timeSlots, booking);
-        }
-      });
-      
-      // Generate and send slot update
-      this.generateAndSendSlotUpdate(date, sportType, snapshot.docs.map(doc => doc.data() as BookingData));
-    }, (error) => {
-      console.error(`Error in Firebase listener for ${topic}:`, error);
-    });
-
-    this.firebaseListeners.set(topic, unsubscribe);
-  }
-
-  private removeFirebaseListener(topic: string) {
-    const unsubscribe = this.firebaseListeners.get(topic);
-    if (unsubscribe) {
-      unsubscribe();
-      this.firebaseListeners.delete(topic);
-      console.log(`Removed Firebase listener for ${topic}`);
-    }
-  }
-
-  private async sendCurrentSlotData(date: string, sportType: string) {
-    try {
-      const bookingsQuery = query(
-        collection(db, 'bookings'),
-        where('date', '==', date),
-        where('sportType', '==', sportType)
-      );
-      
-      // This would need to be implemented with your Firebase method
-      // For now, just trigger the listener which will send the data
-    } catch (error) {
-      console.error('Error fetching current slot data:', error);
-    }
-  }
-
-  private generateAndSendSlotUpdate(date: string, sportType: string, bookings: BookingData[]) {
-    const slots: SlotData[] = [];
-    const bookedSlots = new Set<string>();
-    
-    // Process all confirmed bookings
-    bookings.forEach(booking => {
-      if (booking.status === 'confirmed' && booking.paymentStatus === 'success') {
-        booking.timeSlots.forEach(timeSlot => {
-          bookedSlots.add(timeSlot);
-          slots.push({
-            timeSlot,
-            isBooked: true,
-            bookingId: booking.bookingId,
-            customerName: booking.customerDetails.customer_name || booking.fullName,
-            isExpired: false
-          });
-        });
-      }
-    });
-
-    // Send slot update
-    this.sendSlotUpdate(date, sportType, slots);
-  }
-
-  private scheduleBookingExpiration(booking: BookingData) {
-    // Clear existing timer if any
-    const existingTimer = this.expirationTimers.get(booking.bookingId);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-    }
-
-    const expirationTime = booking.expiresAt.toDate().getTime() - Date.now();
-    
-    if (expirationTime > 0) {
-      const timer = setTimeout(async () => {
-        try {
-          // Update booking status to expired
-          await updateDoc(doc(db, 'bookings', booking.bookingId), {
-            status: 'expired',
-            updatedAt: Timestamp.now()
-          });
-          
-          // Broadcast expiration
-          this.sendBookingExpired(booking);
-          this.expirationTimers.delete(booking.bookingId);
-        } catch (error) {
-          console.error('Error expiring booking:', error);
-        }
-      }, expirationTime);
-      
-      this.expirationTimers.set(booking.bookingId, timer);
-    }
-  }
-
-  private startExpirationChecker() {
-    // Check for expired bookings every 5 minutes
-    setInterval(async () => {
-      try {
-        const now = Timestamp.now();
-        const expiredQuery = query(
-          collection(db, 'bookings'),
-          where('expiresAt', '<', now),
-          where('status', '!=', 'confirmed'),
-          where('status', '!=', 'expired')
-        );
-        
-        // This would need proper implementation with your Firebase setup
-        console.log('Checking for expired bookings...');
-      } catch (error) {
-        console.error('Error in expiration checker:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    console.log(`Refresh slots requested for ${date} ${sportType}`);
+    // The actual refresh will be triggered by your API when it calls refreshSlots
   }
 
   private handleClientDisconnect(clientId: string) {
@@ -356,7 +204,6 @@ class WebSocketManager {
           topicSubscribers.delete(clientId);
           if (topicSubscribers.size === 0) {
             this.subscriptions.delete(topic);
-            this.removeFirebaseListener(topic);
           }
         }
       });
@@ -373,17 +220,21 @@ class WebSocketManager {
     }
   }
 
-  // Public methods for broadcasting messages
+  // Public methods for broadcasting messages (called from your API routes)
   public broadcastToTopic(topic: string, message: WebSocketMessage) {
     const subscribers = this.subscriptions.get(topic);
-    if (subscribers) {
+    if (subscribers && subscribers.size > 0) {
+      console.log(`Broadcasting to ${subscribers.size} clients on topic: ${topic}`);
       subscribers.forEach(clientId => {
         this.sendToClient(clientId, message);
       });
+    } else {
+      console.log(`No subscribers for topic: ${topic}`);
     }
   }
 
   public broadcastToAll(message: WebSocketMessage) {
+    console.log(`Broadcasting to ${this.clients.size} clients`);
     this.clients.forEach((client, clientId) => {
       this.sendToClient(clientId, message);
     });
@@ -404,6 +255,8 @@ class WebSocketManager {
   }
 
   public sendBookingConfirmed(bookingData: BookingData) {
+    console.log(`Broadcasting booking confirmed: ${bookingData.bookingId}`);
+    
     // Broadcast to all clients for admin notifications
     this.broadcastToAll({
       type: 'booking_confirmed',
@@ -457,6 +310,8 @@ class WebSocketManager {
   }
 
   public sendBookingExpired(bookingData: BookingData) {
+    console.log(`Broadcasting booking expired: ${bookingData.bookingId}`);
+    
     // Broadcast to all for admin notifications
     this.broadcastToAll({
       type: 'booking_expired',
@@ -476,22 +331,61 @@ class WebSocketManager {
     });
   }
 
+  // Method to refresh slots for a specific date/sport (called from API)
+  public refreshSlots(date: string, sportType: string, slotsData: SlotData[]) {
+    console.log(`Refreshing slots for ${date} ${sportType}`);
+    this.sendSlotUpdate(date, sportType, slotsData);
+  }
+
+  // Method to schedule booking expiration (called from API when booking is created)
+  public scheduleBookingExpiration(bookingData: BookingData) {
+    // Clear existing timer if any
+    const existingTimer = this.expirationTimers.get(bookingData.bookingId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const expirationTime = new Date(bookingData.expiresAt).getTime() - Date.now();
+    
+    if (expirationTime > 0) {
+      console.log(`Scheduling expiration for booking ${bookingData.bookingId} in ${expirationTime}ms`);
+      
+      const timer = setTimeout(() => {
+        console.log(`Booking ${bookingData.bookingId} expired`);
+        
+        // Notify that booking expired
+        this.sendBookingExpired(bookingData);
+        this.expirationTimers.delete(bookingData.bookingId);
+        
+        // Note: The actual database update should be handled by your API
+        // You can make an HTTP request here or emit an event to your main application
+      }, expirationTime);
+      
+      this.expirationTimers.set(bookingData.bookingId, timer);
+    }
+  }
+
+  // Method to cancel booking expiration (called when booking is confirmed)
+  public cancelBookingExpiration(bookingId: string) {
+    const timer = this.expirationTimers.get(bookingId);
+    if (timer) {
+      clearTimeout(timer);
+      this.expirationTimers.delete(bookingId);
+      console.log(`Cancelled expiration timer for booking ${bookingId}`);
+    }
+  }
+
   public getStats() {
     return {
       connectedClients: this.clients.size,
       activeSubscriptions: this.subscriptions.size,
       topics: Array.from(this.subscriptions.keys()),
-      firebaseListeners: this.firebaseListeners.size,
       expirationTimers: this.expirationTimers.size
     };
   }
 
   // Cleanup method
   public cleanup() {
-    // Clear all Firebase listeners
-    this.firebaseListeners.forEach(unsubscribe => unsubscribe());
-    this.firebaseListeners.clear();
-    
     // Clear all expiration timers
     this.expirationTimers.forEach(timer => clearTimeout(timer));
     this.expirationTimers.clear();
