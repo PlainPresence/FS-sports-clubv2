@@ -36,9 +36,10 @@ const convertToAmPmFormat = (slot: string) => {
     let [hour, minute] = time.split(':').map(Number);
     const period = hour >= 12 ? 'PM' : 'AM';
     hour = hour % 12 || 12;
-    // Do NOT pad hour with zero
+    // Never pad hour with zero
     return `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
   };
+  // Normalize both start and end
   return `${formatTime(start)} - ${formatTime(end)}`;
 };
 
