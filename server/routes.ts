@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedTimeSlots = timeSlots.map(normalizeTimeSlot);
       
       // Use Firestore transaction for atomic slot booking
-  await firestore.runTransaction(async (transaction: any) => {
+      await firestore.runTransaction(async (transaction: any) => {
         // 1. Check for duplicate bookingId
         const existingBookingSnap = await transaction.get(
           firestore.collection('bookings').where('bookingId', '==', bookingData.bookingId)
@@ -455,23 +455,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!existingBookingSnap.empty) {
           throw new Error('Duplicate bookingId. This booking already exists.');
         }
-        
-        // 2. Check for already booked slots
-        const bookingsQuery = firestore.collection('bookings')
-          .where('date', '==', date)
-          .where('sportType', '==', sportType)
-          .where('paymentStatus', '==', 'success')
-          .where('status', '==', 'confirmed');
-        const bookingsSnapshot = await transaction.get(bookingsQuery);
-        
-        const bookedSlots = bookingsSnapshot.docs.flatMap((doc: any) => {
-          const data = doc.data();
-          return Array.isArray(data.timeSlots) ? data.timeSlots.map(normalizeTimeSlot) : [normalizeTimeSlot(data.timeSlot)];
-        });
-        
-        for (const slot of normalizedTimeSlots) {
-          if (bookedSlots.includes(slot)) {
-            throw new Error(`Slot ${slot} already booked.`);
+
+        // 2. Check for already booked slots (skip for tournaments)
+        if (!bookingData.bookingType || bookingData.bookingType !== 'tournament') {
+          const bookingsQuery = firestore.collection('bookings')
+            .where('date', '==', date)
+            .where('sportType', '==', sportType)
+            .where('paymentStatus', '==', 'success')
+            .where('status', '==', 'confirmed');
+          const bookingsSnapshot = await transaction.get(bookingsQuery);
+
+          const bookedSlots = bookingsSnapshot.docs.flatMap((doc: any) => {
+            const data = doc.data();
+            return Array.isArray(data.timeSlots) ? data.timeSlots.map(normalizeTimeSlot) : [normalizeTimeSlot(data.timeSlot)];
+          });
+
+          for (const slot of normalizedTimeSlots) {
+            if (bookedSlots.includes(slot)) {
+              throw new Error(`Slot ${slot} already booked.`);
+            }
           }
         }
         
