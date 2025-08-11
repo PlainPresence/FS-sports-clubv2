@@ -137,7 +137,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
 
       // Check if booking already exists for this orderId (inside transaction)
       let bookingData: any = null;
-  await firestore.runTransaction(async (transaction: any) => {
+      await firestore.runTransaction(async (transaction: any) => {
         const existing = await transaction.get(
           firestore.collection('bookings').where('cashfreeOrderId', '==', order.order_id)
         );
@@ -146,31 +146,31 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           return; // Exit transaction, do not create duplicate
         }
 
-        // Check for double booking - prevent booking the same slots
-        console.log('Checking for double booking...');
+        // Check for double booking - prevent booking the same slots (skip for tournaments)
+        const isTournament = !!finalSlotInfo.tournamentId;
         const timeSlotsArr: string[] = Array.isArray(finalSlotInfo.timeSlots) ? finalSlotInfo.timeSlots : [finalSlotInfo.timeSlots];
-        // Normalize all time slots for this booking
         const normalizedTimeSlotsArr: string[] = timeSlotsArr.map(normalizeTimeSlot);
-        console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
-        
-        const existingBookings = await transaction.get(
-          firestore.collection('bookings')
-            .where('date', '==', finalSlotInfo.date)
-            .where('sportType', '==', finalSlotInfo.sportType)
-            .where('paymentStatus', '==', 'success')
-        );
-        
-        const bookedSlots: string[] = existingBookings.docs.flatMap((doc: any) => {
-          const data = doc.data();
-          console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
-          const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
-          return slots.map(normalizeTimeSlot);
-        });
-        
-        const conflictingSlots: string[] = normalizedTimeSlotsArr.filter((slot: string) => bookedSlots.includes(slot));
-        if (conflictingSlots.length > 0) {
-          console.log('Double booking detected for slots:', conflictingSlots, 'on date:', finalSlotInfo.date);
-          throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
+        if (!isTournament) {
+          console.log('Checking for double booking on date:', finalSlotInfo.date, 'with slots:', normalizedTimeSlotsArr);
+          const existingBookings = await transaction.get(
+            firestore.collection('bookings')
+              .where('date', '==', finalSlotInfo.date)
+              .where('sportType', '==', finalSlotInfo.sportType)
+              .where('paymentStatus', '==', 'success')
+          );
+          const bookedSlots: string[] = existingBookings.docs.flatMap((doc: any) => {
+            const data = doc.data();
+            console.log('Existing booking date:', data.date, 'slots:', data.timeSlots);
+            const slots: string[] = Array.isArray(data.timeSlots) ? data.timeSlots : [data.timeSlot || data.timeSlots];
+            return slots.map(normalizeTimeSlot);
+          });
+          const conflictingSlots: string[] = normalizedTimeSlotsArr.filter((slot: string) => bookedSlots.includes(slot));
+          if (conflictingSlots.length > 0) {
+            console.log('Double booking detected for slots:', conflictingSlots, 'on date:', finalSlotInfo.date);
+            throw new Error('Slots already booked: ' + conflictingSlots.join(', '));
+          }
+        } else {
+          console.log('Tournament booking: skipping double booking check');
         }
 
         // Ensure we have minimum required data for booking
@@ -193,7 +193,7 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
           customerDetails: {
             customer_name: order.customer_details?.customer_name || event.data.customer_details?.customer_name || '',
             customer_phone: order.customer_details?.customer_phone || event.data.customer_details?.customer_phone || '',
-            customer_email: order.customer_details?.customer_email || event.data.customer_details?.customer_email || '',
+            customer_email: order.customer_details?.customer_email || event.data.customer_email || '',
             customer_id: order.order_id
           },
           ...finalSlotInfo,
