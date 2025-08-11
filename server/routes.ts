@@ -39,6 +39,7 @@ function normalizeTimeSlot(slot: string): string {
 }
 
 export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
+  // ...existing code...
 
   try {
     // Use the raw body (Buffer) for signature verification
@@ -228,6 +229,23 @@ export const cashfreeWebhookHandler = async (req: Request, res: Response) => {
       
       // Broadcast booking confirmation via WebSocket
       if (wsManager && bookingData) {
+        // If this is a tournament booking, decrement remainingSlots in tournaments collection
+        if (bookingData.bookingType === 'tournament' && bookingData.tournamentId) {
+          const tournamentRef = firestore.collection('tournaments').doc(bookingData.tournamentId);
+          await firestore.runTransaction(async (transaction: any) => {
+            const tournamentDoc = await transaction.get(tournamentRef);
+            if (tournamentDoc.exists) {
+              const data = tournamentDoc.data();
+              const currentSlots = typeof data.remainingSlots === 'number' ? data.remainingSlots : 0;
+              if (currentSlots > 0) {
+                transaction.update(tournamentRef, {
+                  remainingSlots: currentSlots - 1,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+              }
+            }
+          });
+        }
         try {
           // Convert Firestore timestamps to dates for WebSocket
           const wsBookingData = {
